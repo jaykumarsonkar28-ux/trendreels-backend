@@ -65,10 +65,10 @@ const calculateContentScore = (video) => {
 
 // API Routes
 //app.post('/api/videos/upload', uploadVideo);
-app.get('/api/videos/feed', getPersonalizedFeed);
-app.post('/api/videos/:id/like', likeVideo);
-app.post('/api/wallet/payout', processPayout);
-app.get('/api/dashboard/stats', getCreatorStats);
+//app.get('/api/videos/feed', getPersonalizedFeed);
+//app.post('/api/videos/:id/like', likeVideo);
+//app.post('/api/wallet/payout', processPayout);
+//app.get('/api/dashboard/stats', getCreatorStats);
 
 // Socket.io for Cheating Room
 io.on('connection', (socket) => {
