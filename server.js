@@ -96,3 +96,10 @@ const distributeAdRevenue = async (videoId, revenue) => {
   await video.save();
   await video.author.save();
 };
+
+// Server start karne ka code (Jo main naya add kiya hai)
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
+  console.log(`TrendReels Server is running on port ${PORT}`);
+});
+      
