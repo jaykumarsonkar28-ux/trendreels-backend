@@ -102,4 +102,36 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`TrendReels Server is running on port ${PORT}`);
 });
-      
+  } // Ye for-loop ko band karega
+}; // Ye monetization function ko band karega
+
+// --- HUMARE NAYE ROUTES (RASTE) ---
+
+// 1. Frontend ko Reels/Edits bhejne ka rasta
+app.get('/api/reels', (req, res) => {
+  res.json([
+    { id: '1', image: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1000', username: '@_sagarr08', description: 'Backend se aayi pehli post! 🔥' },
+    { id: '2', image: 'https://images.unsplash.com/photo-1516245834210-c4c142787335?q=80&w=1000', username: '@_sagarr08', description: 'Ek aur original edit 💻' }
+  ]);
+});
+
+// 2. Cheat Room ke liye Live Chatting (Socket.io)
+io.on('connection', (socket) => {
+  console.log('Ek naya user Cheat Room me aaya!');
+  
+  socket.on('sendMessage', (messageData) => {
+    // Jab koi message bhejega, toh server wo sabko bhej dega
+    io.emit('receiveMessage', messageData);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User chala gaya');
+  });
+});
+
+// --- SERVER KO "ON" KARNE KA MAIN CODE ---
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
+  console.log(`Bhai tera server Port ${PORT} par daud raha hai! 🚀`);
+});
+
