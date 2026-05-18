@@ -4,15 +4,12 @@ const mongoose = require('mongoose');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
-const admin = require('firebase-admin');
-const ffmpeg = require('fluent-ffmpeg');
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, { cors: { origin: '*' } });
 
 app.use(cors());
-// 🌟 NAYA: Badi photos (edits) ke liye limit badha di hai
 app.use(express.json({ limit: '50mb' })); 
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -27,28 +24,19 @@ mongoose.connect(process.env.MONGODB_URI)
 const reelSchema = new mongoose.Schema({
   username: String,
   description: String,
-  image: String, // Yahan aapki photo ka data save hoga
+  image: String,
+  likes: { type: Number, default: 0 }, // 🌟 NAYA: Likes ki ginti save karne ke liye
   createdAt: { type: Date, default: Date.now }
 });
 const Reel = mongoose.model('Reel', reelSchema);
 
-// Daily cron job for monetization check (Aapka purana code)
-const checkMonetizationEligibility = async () => {
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-  // Note: Ensure User model is imported if you are using it
-  /* const eligibleUsers = await User.find({ ... });
-  for (let user of eligibleUsers) { ... }
-  */
-};
-
 // ==========================================
-// --- HUMARE NAYE ROUTES (DARWAZE) ---
+// --- HUMARE ROUTES (DARWAZE) ---
 // ==========================================
 
-// 1. App ko Reels bhejne ka rasta (Ab seedha MongoDB se)
+// 1. Saari Reels mangwane ka rasta
 app.get('/api/reels', async (req, res) => {
   try {
-    // MongoDB se saari posts nikalo, aur sabse nayi pehle dikhao (createdAt: -1)
     const reels = await Reel.find().sort({ createdAt: -1 });
     res.json(reels);
   } catch (error) {
@@ -56,38 +44,51 @@ app.get('/api/reels', async (req, res) => {
   }
 });
 
-// 2. 🌟 NAYA: App se Photo Upload (Save) karne ka rasta
+// 2. Nayi Reel upload karne ka rasta
 app.post('/api/reels', async (req, res) => {
   try {
     const newReel = new Reel({
-      username: '@_sagarr08', // Aapka handle
-      description: req.body.description || 'Meri nayi edit! 🔥',
-      image: req.body.image // App se aane wali photo
+      username: '@_sagarr08',
+      description: req.body.description || 'Bhai ka naya bawal edit! 🔥🚀',
+      image: req.body.image,
+      likes: 0 // Shuruat me 0 likes honge
     });
     
-    await newReel.save(); // Data hamesha ke liye MongoDB mein save!
-    console.log("Ek nayi post save ho gayi!");
+    await newReel.save();
     res.json({ message: 'Post ekdum success ho gayi!', reel: newReel });
   } catch (error) {
-    console.error('Upload Error:', error);
     res.status(500).json({ error: 'Upload fail ho gaya' });
   }
 });
 
-// 3. Cheat Room ke liye Live Chatting (Socket.io)
+// 3. 🌟 NAYA DARWAZA: Like badhane aur ghatane ka rasta
+app.post('/api/reels/:id/like', async (req, res) => {
+  try {
+    const reel = await Reel.findById(req.params.id);
+    if (!reel) return res.status(404).json({ error: 'Reel nahi mili bhai!' });
+
+    const { action } = req.body; // Frontend se aayega ki 'like' karna hai ya 'unlike'
+    
+    if (action === 'like') {
+      reel.likes += 1;
+    } else if (action === 'unlike' && reel.likes > 0) {
+      reel.likes -= 1;
+    }
+
+    await reel.save();
+    res.json({ success: true, likes: reel.likes });
+  } catch (error) {
+    res.status(500).json({ error: 'Like update karne me dikkat aayi' });
+  }
+});
+
+// Socket.io for Cheat Room
 io.on('connection', (socket) => {
-  console.log('Ek naya user Cheat Room me aaya!');
   socket.on('sendMessage', (messageData) => {
     io.emit('receiveMessage', messageData);
   });
-  socket.on('disconnect', () => {
-    console.log('User chala gaya');
-  });
 });
 
-// ==========================================
-// --- SERVER KO "ON" KARNE KA MAIN CODE ---
-// ==========================================
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`Bhai tera server Port ${PORT} par daud raha hai! 🚀`);
