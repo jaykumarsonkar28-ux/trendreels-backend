@@ -1,5 +1,5 @@
 // server.js
-require('dotenv').config(); // 🌟 NAYA: Iske bina process.env kaam nahi karega bhai!
+require('dotenv').config(); // 🌟 Iske bina process.env kaam nahi karega bhai!
 const express = require('express');
 const mongoose = require('mongoose');
 const http = require('http');
@@ -16,9 +16,11 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // ==========================================
-// 💸 1️⃣ WALLET ROUTES IMPORT
+// 💸 HUMARE IMPORTED ROUTES
 // ==========================================
 const walletRoutes = require('./routes/walletRoutes');
+const Block = require('./models/Block'); // 🛡️ NAYA: Blocked users filter chalane ke liye model import kiya
+
 
 // ==========================================
 // --- MONGODB DATABASE KA DHANCHA (SCHEMA) ---
@@ -32,26 +34,46 @@ const reelSchema = new mongoose.Schema({
 });
 const Reel = mongoose.model('Reel', reelSchema);
 
+
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('MongoDB ekdum jhakkaas jud gaya! 🎉'))
   .catch(err => console.error('MongoDB connection error:', err));
 
+
 // ==========================================
-// 💸 2️⃣ API ENDPOINT LINK
+// 💸 API ENDPOINT LINKS
 // ==========================================
 app.use('/api/wallet', walletRoutes);
+
 
 // ==========================================
 // --- HUMARE ROUTES (DARWAZE) ---
 // ==========================================
 
-// 1. Saari Reels mangwane ka rasta
+// 1. Saari Reels mangwane ka rasta (🔥 NAYA: With Block User Filter Active)
 app.get('/api/reels', async (req, res) => {
   try {
-    const reels = await Reel.find().sort({ createdAt: -1 });
+    // 💡 Note: Agar aapke paas auth middleware hai toh req.user._id milega, 
+    // nahi toh testing ke liye aap req.query.userId ya req.body.userId le sakte hain.
+    const currentUserId = req.user ? req.user._id : req.query.userId;
+
+    let query = {};
+
+    // 🛡️ Agar user logged in hai, toh blocked users ki list nikalein
+    if (currentUserId) {
+      const blockedUsers = await Block.find({ blocker: currentUserId }).distinct('blocked');
+      
+      // Reels query me filter lagayein: un logo ki reel mat dikhao jo blockedUsers list me hain
+      query = { username: { $nin: blockedUsers } }; 
+    }
+
+    // Filter ke sath reels ko database se nikalna
+    const reels = await Reel.find(query).sort({ createdAt: -1 });
     res.json(reels);
+
   } catch (error) {
+    console.error("Feed Load Error:", error);
     res.status(500).json({ error: 'Server se post nikalne me dikkat aayi' });
   }
 });
