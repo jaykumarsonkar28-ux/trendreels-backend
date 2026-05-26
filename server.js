@@ -1,4 +1,5 @@
 // server.js
+require('dotenv').config(); // 🌟 NAYA: Iske bina process.env kaam nahi karega bhai!
 const express = require('express');
 const mongoose = require('mongoose');
 const http = require('http');
@@ -9,26 +10,37 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, { cors: { origin: '*' } });
 
+// Middlewares
 app.use(cors());
 app.use(express.json({ limit: '50mb' })); 
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// MongoDB connection
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('MongoDB ekdum jhakkaas jud gaya!'))
-  .catch(err => console.error('MongoDB error:', err));
+// ==========================================
+// 💸 1️⃣ WALLET ROUTES IMPORT
+// ==========================================
+const walletRoutes = require('./routes/walletRoutes');
 
 // ==========================================
-// --- MONGODB DATABASE KA DACHA (SCHEMA) ---
+// --- MONGODB DATABASE KA DHANCHA (SCHEMA) ---
 // ==========================================
 const reelSchema = new mongoose.Schema({
   username: String,
   description: String,
   image: String,
-  likes: { type: Number, default: 0 }, // 🌟 NAYA: Likes ki ginti save karne ke liye
+  likes: { type: Number, default: 0 }, // Likes ki ginti save karne ke liye
   createdAt: { type: Date, default: Date.now }
 });
 const Reel = mongoose.model('Reel', reelSchema);
+
+// MongoDB connection
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('MongoDB ekdum jhakkaas jud gaya! 🎉'))
+  .catch(err => console.error('MongoDB connection error:', err));
+
+// ==========================================
+// 💸 2️⃣ API ENDPOINT LINK
+// ==========================================
+app.use('/api/wallet', walletRoutes);
 
 // ==========================================
 // --- HUMARE ROUTES (DARWAZE) ---
@@ -61,7 +73,7 @@ app.post('/api/reels', async (req, res) => {
   }
 });
 
-// 3. 🌟 NAYA DARWAZA: Like badhane aur ghatane ka rasta
+// 3. Like badhane aur ghatane ka rasta
 app.post('/api/reels/:id/like', async (req, res) => {
   try {
     const reel = await Reel.findById(req.params.id);
@@ -84,8 +96,14 @@ app.post('/api/reels/:id/like', async (req, res) => {
 
 // Socket.io for Cheat Room
 io.on('connection', (socket) => {
+  console.log('Koi chat room me aaya hai! 💬');
+
   socket.on('sendMessage', (messageData) => {
     io.emit('receiveMessage', messageData);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Koi chat chhod kar chala gaya 🏃‍♂️');
   });
 });
 
