@@ -9,15 +9,13 @@ const videoSchema = new mongoose.Schema({
   hashtags: [String],
   views: { type: Number, default: 0 },
   
-  // Likes ko array rakhne ki jagah simple Number rakhna database ke liye light hota hai
-  // Agar users list chahiye toh Iske liye 'Like' ka alag model bana sakte hain
-  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], 
+  // FIXED: Array hatakar ab hum sirf total likes ka number store karenge (Database friendly approach)
+  likesCount: { type: Number, default: 0 }, 
   
   shares: { type: Number, default: 0 },
   duration: Number,
   isOriginal: { type: Boolean, default: true },
   
-  // FIXED: Nested object ka sahi syntax yeh hai
   editScoreDetails: {
     score: { type: Number, default: 0 },
     filtersUsed: [String],
