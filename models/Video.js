@@ -1,3 +1,4 @@
+// models/Video.js
 const mongoose = require('mongoose');
 
 const videoSchema = new mongoose.Schema({
@@ -7,28 +8,31 @@ const videoSchema = new mongoose.Schema({
   caption: String,
   hashtags: [String],
   views: { type: Number, default: 0 },
-  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  comments: [{
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    text: String,
-    createdAt: { type: Date, default: Date.now }
-  }],
+  
+  // Likes ko array rakhne ki jagah simple Number rakhna database ke liye light hota hai
+  // Agar users list chahiye toh Iske liye 'Like' ka alag model bana sakte hain
+  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], 
+  
   shares: { type: Number, default: 0 },
   duration: Number,
   isOriginal: { type: Boolean, default: true },
-  editScore: { 
-    type: Number, 
-    default: 0, 
+  
+  // FIXED: Nested object ka sahi syntax yeh hai
+  editScoreDetails: {
+    score: { type: Number, default: 0 },
     filtersUsed: [String],
-    hasTextOverlay: Boolean,
-    musicAdded: Boolean,
-    speedChanged: Boolean
+    hasTextOverlay: { type: Boolean, default: false },
+    musicAdded: { type: Boolean, default: false },
+    speedChanged: { type: Boolean, default: false }
   },
+  
   qualityScore: { type: Number, default: 100 },
   earnings: { type: Number, default: 0.0 },
   isActive: { type: Boolean, default: true },
   expiresAt: Date 
 }, { timestamps: true });
 
+// Indexing taaki author ke videos jaldi load hon
+videoSchema.index({ author: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Video', videoSchema);
-             
