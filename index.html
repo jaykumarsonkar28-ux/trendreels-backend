@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TrendReels App</title>
     <style>
-        /* Base styles */
         * {
             margin: 0;
             padding: 0;
@@ -18,19 +17,19 @@
             overflow: hidden;
         }
 
-        /* Main reels container for vertical magnetic scroll 🧲 */
+        /* Reels Container for vertical magnetic scroll 🧲 */
         .reels-container {
             width: 100%;
             height: 100vh;
             overflow-y: scroll;
             scroll-snap-type: y mandatory;
-            scrollbar-width: none; /* Firefox ke liye scrollbar chupane ke liye */
+            scrollbar-width: none;
         }
         .reels-container::-webkit-scrollbar {
-            display: none; /* Chrome/Safari ke liye scrollbar chupane ke liye */
+            display: none;
         }
 
-        /* Single reel section covering full screen 📱 */
+        /* Single Reel Card 📱 */
         .reel-card {
             width: 100%;
             height: 100vh;
@@ -39,14 +38,14 @@
             background-color: #111;
         }
 
-        /* Video styling to fit 9:16 screen perfectly 🎬 */
+        /* Video styling 🎬 */
         .reel-video {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* Video ko stretch hone se bachane ke liye */
+            object-fit: cover;
         }
 
-        /* Overlay text for Title on top of video 💬 */
+        /* Title Overlay 💬 */
         .reel-overlay {
             position: absolute;
             bottom: 40px;
@@ -63,23 +62,33 @@
 </head>
 <body>
 
-    <!-- Reels Container -->
-    <div class="reels-container" id="reelsContainer">
-        <!-- Videos abhi humne dummy rakhi hain, baad mein JavaScript se aayengi -->
-        <div class="reel-card">
-            <video class="reel-video" src="https://www.w3schools.com/html/mov_bbb.mp4" loop autoplay muted></video>
-            <div class="reel-overlay">
-                <div class="reel-title">Trending Reel 1</div>
-            </div>
-        </div>
-        
-        <div class="reel-card">
-            <video class="reel-video" src="https://www.w3schools.com/html/movie.mp4" loop autoplay muted></video>
-            <div class="reel-overlay">
-                <div class="reel-title">Trending Reel 2</div>
-            </div>
-        </div>
-    </div>
+    <!-- Main container jahan videos automatic load hongi -->
+    <div class="reels-container" id="reelsContainer"></div>
+
+    <script>
+        // 1. reels.json file se data fetch karne ka link 🌐
+        const jsonUrl = 'https://jaykumarsonkar28-ux.github.io/trendreels-backend/reels.json';
+        const container = document.getElementById('reelsContainer');
+
+        // 2. Data load karne ka function 🔄
+        fetch(jsonUrl)
+            .then(response => response.json())
+            .then(data => {
+                // Loop chalakar har ek reel ko HTML mein add karna
+                data.forEach(reel => {
+                    const card = document.createElement('div');
+                    card.className = 'reel-card';
+                    card.innerHTML = `
+                        <video class="reel-video" src="${reel.video_url}" loop autoplay muted playsinline></video>
+                        <div class="reel-overlay">
+                            <div class="reel-title">${reel.title}</div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            })
+            .catch(error => console.error('Data load karne mein dikkat aayi:', error));
+    </script>
 
 </body>
 </html>
