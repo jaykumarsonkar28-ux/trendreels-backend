@@ -3,42 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TrendReels Test App</title>
+    <title>TrendReels App</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background: #121212; color: white; padding: 50px; }
-        button { background: #E50914; color: white; border: none; padding: 15px 30px; font-size: 18px; cursor: pointer; border-radius: 5px; }
-        #status { margin-top: 20px; font-size: 16px; color: #00FF00; }
+        /* Base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background-color: #000;
+            font-family: Arial, sans-serif;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        /* Main reels container for vertical magnetic scroll 🧲 */
+        .reels-container {
+            width: 100%;
+            height: 100vh;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            scrollbar-width: none; /* Firefox ke liye scrollbar chupane ke liye */
+        }
+        .reels-container::-webkit-scrollbar {
+            display: none; /* Chrome/Safari ke liye scrollbar chupane ke liye */
+        }
+
+        /* Single reel section covering full screen 📱 */
+        .reel-card {
+            width: 100%;
+            height: 100vh;
+            scroll-snap-align: start;
+            position: relative;
+            background-color: #111;
+        }
+
+        /* Video styling to fit 9:16 screen perfectly 🎬 */
+        .reel-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Video ko stretch hone se bachane ke liye */
+        }
+
+        /* Overlay text for Title on top of video 💬 */
+        .reel-overlay {
+            position: absolute;
+            bottom: 40px;
+            left: 20px;
+            z-index: 10;
+            text-shadow: 1px 1px 5px rgba(0,0,0,0.8);
+        }
+        .reel-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
 
-    <h1>TrendReels Test 🎬</h1>
-    <p>Kya hamara mobile app frontend backend se connect ho pa raha hai?</p>
-    
-    <!-- Yeh button click karne par backend ko call karega -->
-    <button onclick="testBackend()">Connect to Backend</button>
-    
-    <div id="status"></div>
-
-    <script>
-        async function testBackend() {
-            const statusDiv = document.getElementById('status');
-            statusDiv.innerText = "Connecting...";
-            
-            try {
-                // Aapka Render Backend URL
-                const response = await fetch('https://trendreels-backend-1.onrender.com');
-                if(response.ok) {
-                    statusDiv.innerText = "Success! Backend se connection pakka ho gaya. 🎉";
-                } else {
-                    statusDiv.innerText = "Backend mil gaya, par kuch error hai.";
-                }
-            } catch (error) {
-                statusDiv.innerText = "Connection failed! Backend abhi so raha hai ya URL galat hai.";
-                console.error(error);
-            }
-        }
-    </script>
+    <!-- Reels Container -->
+    <div class="reels-container" id="reelsContainer">
+        <!-- Videos abhi humne dummy rakhi hain, baad mein JavaScript se aayengi -->
+        <div class="reel-card">
+            <video class="reel-video" src="https://www.w3schools.com/html/mov_bbb.mp4" loop autoplay muted></video>
+            <div class="reel-overlay">
+                <div class="reel-title">Trending Reel 1</div>
+            </div>
+        </div>
+        
+        <div class="reel-card">
+            <video class="reel-video" src="https://www.w3schools.com/html/movie.mp4" loop autoplay muted></video>
+            <div class="reel-overlay">
+                <div class="reel-title">Trending Reel 2</div>
+            </div>
+        </div>
+    </div>
 
 </body>
 </html>
