@@ -1,4 +1,4 @@
-use<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -45,7 +45,7 @@ use<!DOCTYPE html>
             object-fit: cover;
         }
 
-        /* Right Side Buttons Container (Vertical Column) ↕️ */
+        /* Right Side Buttons Container ↕️ */
         .reels-buttons {
             position: absolute;
             right: 15px;
@@ -98,12 +98,14 @@ use<!DOCTYPE html>
         const jsonUrl = 'https://jaykumarsonkar28-ux.github.io/trendreels-backend/reels.json';
         const container = document.getElementById('reelsContainer');
 
-        // Data load aur dynamic player setup 🔄
-        fetch(jsonUrl)
-            .then(response => response.json())
-            .then(data => {
-                for (const reel of data) { ... }
-
+        // Sequence ko sahi rakhne ke liye ek async function 🔄
+        async function loadReels() {
+            try {
+                const response = await fetch(jsonUrl);
+                const data = await response.json();
+                
+                // for...of loop jo ek-ek karke sahi order mein data load karega 1️⃣➡️2️⃣➡️3️⃣
+                for (const reel of data) {
                     const card = document.createElement('div');
                     card.className = 'reel-card';
                     card.innerHTML = `
@@ -121,9 +123,14 @@ use<!DOCTYPE html>
                         </div>
                     `;
                     container.appendChild(card);
-                });
-            })
-            .catch(error => console.error('Error loading reels:', error));
+                }
+            } catch (error) {
+                console.error('Reels load karne mein dikkat aayi:', error);
+            }
+        }
+
+        // Function ko chalayein
+        loadReels();
 
         // Like Button Logic ❤️
         function toggleLike(button) {
@@ -136,15 +143,13 @@ use<!DOCTYPE html>
 
         // Mute/Unmute Logic 🔊
         function toggleMute(button) {
-            // Button ke paas wale video element ko dhoondhna
             const video = button.closest('.reel-card').querySelector('.reel-video');
-            
             if (video.muted) {
                 video.muted = false;
-                button.innerText = '🔊'; // Aawaaz khul gayi
+                button.innerText = '🔊';
             } else {
                 video.muted = true;
-                button.innerText = '🔇'; // Silent ho gaya
+                button.innerText = '🔇';
             }
         }
     </script>
