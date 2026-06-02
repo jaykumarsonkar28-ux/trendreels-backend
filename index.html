@@ -75,18 +75,54 @@
                 for (const reel of data) {
                     const card = document.createElement('div');
                     card.className = 'reel-card';
-                    // Yahan se muted hata diya hai taaki sound automatic aaye 🔊
+                    
+                    // 1. Shuruat mein 'muted' rakhna zaroori hai browser policy ke liye
                     card.innerHTML = `
-                        <video class="reel-video" src="${reel.video_url}" loop autoplay playsinline></video>
+                        <video class="reel-video" src="${reel.video_url}" loop muted playsinline></video>
                         <div class="reel-overlay">
                             <div class="reel-title">${reel.title}</div>
                         </div>
                     `;
                     container.appendChild(card);
                 }
+
+                // Reels load hone ke baad auto-play aur sound handle karenge
+                setupReelController();
+
             } catch (error) {
                 console.error('Reels load karne mein dikkat aayi:', error);
             }
+        }
+
+        function setupReelController() {
+            const videos = document.querySelectorAll('.reel-video');
+
+            // 2. Global Unmute: Screen par kahi bhi touch/click karte hi saare videos unmute ho jayenge
+            document.body.addEventListener('click', () => {
+                videos.forEach(video => {
+                    video.muted = false;
+                });
+            }, { once: true }); // '{ once: true }' se yeh event sirf pehli click par chalega
+
+            // 3. Intersection Observer: Jo reel screen par dikhegi sirf wahi chalegi
+            const observerOptions = {
+                root: container,
+                threshold: 0.6 // Jab 60% video dikhegi tabhi play hogi
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const video = entry.target;
+                    if (entry.isIntersecting) {
+                        video.play().catch(err => console.log("Autoplay waiting for user interaction"));
+                    } else {
+                        video.pause();
+                    }
+                });
+            }, observerOptions);
+
+            // Saare videos ko observer mein add karein
+            videos.forEach(video => observer.observe(video));
         }
 
         loadReels();
