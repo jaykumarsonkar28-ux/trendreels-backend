@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+use<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -102,7 +102,8 @@
         fetch(jsonUrl)
             .then(response => response.json())
             .then(data => {
-                data.forEach(reel => {
+                for (const reel of data) { ... }
+
                     const card = document.createElement('div');
                     card.className = 'reel-card';
                     card.innerHTML = `
