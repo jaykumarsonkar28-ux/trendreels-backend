@@ -43,34 +43,6 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            cursor: pointer;
-        }
-
-        /* Right Side Buttons Container ↕️ */
-        .reels-buttons {
-            position: absolute;
-            right: 15px;
-            bottom: 100px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            z-index: 10;
-        }
-
-        /* Individual Button Style 🔘 */
-        .action-btn {
-            background: rgba(0, 0, 0, 0.5);
-            border: none;
-            color: white;
-            font-size: 24px;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
         }
 
         /* Title Overlay 💬 */
@@ -80,7 +52,6 @@
             left: 20px;
             z-index: 10;
             text-shadow: 1px 1px 5px rgba(0,0,0,0.8);
-            pointer-events: none; /* Text par click karne se video pause na ho */
         }
         .reel-title {
             font-size: 18px;
@@ -93,11 +64,8 @@
     <div class="reels-container" id="reelsContainer"></div>
 
     <script>
-        const jsonUrl = 'https://jaykumarsonkar28-ux.github.io/trendreels-backend/reels.json';
+        const jsonUrl = 'https://jaykumarsonkar28-ux.github.io/trendreels-backend/reels.json?v=' + new Date().getTime();
         const container = document.getElementById('reelsContainer');
-        
-        // Sound ko globally track karne ke liye variable 🔊
-        let isGlobalMuted = true;
 
         async function loadReels() {
             try {
@@ -107,14 +75,9 @@
                 for (const reel of data) {
                     const card = document.createElement('div');
                     card.className = 'reel-card';
+                    // Yahan se muted hata diya hai taaki sound automatic aaye 🔊
                     card.innerHTML = `
-                        <video class="reel-video" src="${reel.video_url}" loop autoplay muted playsinline onclick="toggleGlobalMute()"></video>
-                        
-                        <div class="reels-buttons">
-                            <button class="action-btn" onclick="toggleLike(this)">🤍</button>
-                            <button class="action-btn mute-btn" onclick="toggleGlobalMute()">🔇</button>
-                        </div>
-
+                        <video class="reel-video" src="${reel.video_url}" loop autoplay playsinline></video>
                         <div class="reel-overlay">
                             <div class="reel-title">${reel.title}</div>
                         </div>
@@ -127,32 +90,6 @@
         }
 
         loadReels();
-
-        // Like Button Logic ❤️
-        function toggleLike(button) {
-            if (button.innerText === '🤍') {
-                button.innerText = '❤️';
-            } else {
-                button.innerText = '🤍';
-            }
-        }
-
-        // Global Mute/Unmute Logic (Instagram Style) 🔊
-        function toggleGlobalMute() {
-            isGlobalMuted = !isGlobalMuted;
-            
-            // Saari videos ka sound ek saath badlein
-            const allVideos = document.querySelectorAll('.reel-video');
-            allVideos.forEach(video => {
-                video.muted = isGlobalMuted;
-            });
-
-            // Saare mute buttons ke icon badlein
-            const allMuteButtons = document.querySelectorAll('.mute-btn');
-            allMuteButtons.forEach(button => {
-                button.innerText = isGlobalMuted ? '🔇' : '🔊';
-            });
-        }
     </script>
 
 </body>
