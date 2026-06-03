@@ -45,17 +45,42 @@
             object-fit: cover;
         }
 
+        /* Right Side Buttons Container ↕️ */
+        .reels-buttons {
+            position: absolute;
+            right: 15px;
+            bottom: 120px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        /* Individual Button Style 🔘 */
+        .action-btn {
+            background: rgba(0, 0, 0, 0.5);
+            border: none;
+            color: white;
+            font-size: 24px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
+        }
+
         /* Profile aur Caption Overlay 💬 */
         .reel-overlay {
             position: absolute;
             bottom: 30px;
             left: 15px;
-            right: 80px; /* Buttons ke liye jagah chhodi hai */
+            right: 80px;
             z-index: 10;
             text-shadow: 1px 1px 5px rgba(0,0,0,0.8);
         }
-
-        /* User Profile Section (Photo + Name) 👤 */
         .profile-section {
             display: flex;
             align-items: center;
@@ -73,12 +98,67 @@
             font-size: 16px;
             font-weight: bold;
         }
-
-        /* Caption Style 📜 */
         .reel-caption {
             font-size: 14px;
             color: #e6e6e6;
-            line-height: 1.4;
+        }
+
+        /* Big Heart Animation Popup ❤️ */
+        .heart-popup {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: 80px;
+            z-index: 11;
+            pointer-events: none;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .heart-popup.animate {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        /* Comment Bottom Sheet (Sliding Panel) 📋 */
+        .comment-sheet {
+            position: absolute;
+            bottom: -50vh;
+            left: 0;
+            width: 100%;
+            height: 50vh;
+            background: #1a1a1a;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            z-index: 20;
+            transition: bottom 0.3s ease;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .comment-sheet.open {
+            bottom: 0;
+        }
+        .sheet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .comment-item {
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        .comment-user {
+            font-weight: bold;
+            color: #3897f0;
+            margin-right: 5px;
         }
     </style>
 </head>
@@ -99,15 +179,45 @@
                     const card = document.createElement('div');
                     card.className = 'reel-card';
                     
-                    // HTML mein Profile Picture, Username aur Caption joda gaya hai 🖼️
+                    // Comments HTML list taiyar karna
+                    let commentsHTML = '';
+                    if(reel.comments) {
+                        reel.comments.forEach(c => {
+                            commentsHTML += `
+                                <div class="comment-item">
+                                    <span class="comment-user">@${c.username}</span>
+                                    <span class="comment-text">${c.text}</span>
+                                </div>`;
+                        });
+                    }
+
                     card.innerHTML = `
-                        <video class="reel-video" src="${reel.video_url}" loop muted playsinline></video>
+                        <!-- Video Element aur Heart Popup -->
+                        <video class="reel-video" src="${reel.video_url}" loop muted playsinline ondblclick="handleDoubleTap(this)"></video>
+                        <div class="heart-popup">❤️</div>
+                        
+                        <!-- Side Buttons (Like aur Comment) -->
+                        <div class="reels-buttons">
+                            <button class="action-btn" onclick="toggleLikeBtn(this)">🤍</button>
+                            <button class="action-btn" onclick="toggleComments(this)">💬</button>
+                        </div>
+
+                        <!-- User Info Overlay -->
                         <div class="reel-overlay">
                             <div class="profile-section">
                                 <img class="profile-pic" src="${reel.profile_pic}" alt="profile">
                                 <span class="username">@${reel.username}</span>
                             </div>
                             <div class="reel-caption">${reel.caption}</div>
+                        </div>
+
+                        <!-- Sliding Comment Sheet -->
+                        <div class="comment-sheet">
+                            <div class="sheet-header">
+                                <h3>Comments</h3>
+                                <button class="close-btn" onclick="toggleComments(this, true)">✕</button>
+                            </div>
+                            <div class="comments-list">${commentsHTML || '<p style="color:#777;">No comments yet</p>'}</div>
                         </div>
                     `;
                     container.appendChild(card);
@@ -120,17 +230,49 @@
             }
         }
 
+        // Double-Tap to Like Logic ❤️
+        function handleDoubleTap(videoElement) {
+            const card = videoElement.closest('.reel-card');
+            const heart = card.querySelector('.heart-popup');
+            const likeBtn = card.querySelector('.reels-buttons button:first-child');
+            
+            // Heart animation ko show karna
+            heart.classList.add('animate');
+            likeBtn.innerText = '❤️'; // Side button ko bhi red karna
+            
+            setTimeout(() => {
+                heart.classList.remove('animate');
+            }, 500);
+        }
+
+        // Side Like Button Click Logic
+        function toggleLikeBtn(button) {
+            button.innerText = button.innerText === '🤍' ? '❤️' : '🤍';
+        }
+
+        // Comment Sheet Open/Close Logic 💬
+        function toggleComments(element, isClose = false) {
+            const card = element.closest('.reel-card');
+            const sheet = card.querySelector('.comment-sheet');
+            if (isClose) {
+                sheet.classList.remove('open');
+            } else {
+                sheet.classList.add('open');
+            }
+        }
+
         function setupReelController() {
             const videos = document.querySelectorAll('.reel-video');
 
-            // Screen touch karte hi unmute karne ke liye
-            document.body.addEventListener('click', () => {
+            document.body.addEventListener('click', (e) => {
+                // Agar user buttons ya comment sheet par click kare toh unmute event ruk jaye
+                if(e.target.closest('.reels-buttons') || e.target.closest('.comment-sheet')) return;
+                
                 videos.forEach(video => {
                     video.muted = false;
                 });
             }, { once: true });
 
-            // Intersection Observer scroll control ke liye
             const observerOptions = {
                 root: container,
                 threshold: 0.6
@@ -143,6 +285,9 @@
                         video.play().catch(err => console.log("Autoplay waiting"));
                     } else {
                         video.pause();
+                        // Reel scroll hote hi comment sheet band ho jaye
+                        const card = video.closest('.reel-card');
+                        card.querySelector('.comment-sheet').classList.remove('open');
                     }
                 });
             }, observerOptions);
