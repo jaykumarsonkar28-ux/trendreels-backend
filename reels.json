@@ -5,7 +5,11 @@
     "video_url": "https://www.w3schools.com/html/mov_bbb.mp4",
     "username": "jay_kumar",
     "profile_pic": "https://picsum.photos/id/1025/50/50",
-    "caption": "Amazing day coding this app! 💻🔥 #development"
+    "caption": "Amazing day coding this app! 💻🔥 #development",
+    "comments": [
+      {"username": "amit_99", "text": "Bhai kya mast app banayi hai! 🙌"},
+      {"username": "sara_codes", "text": "Double tap feature is awesome ❤️"}
+    ]
   },
   {
     "id": 2,
@@ -13,14 +17,9 @@
     "video_url": "https://www.w3schools.com/html/movie.mp4",
     "username": "nature_lover",
     "profile_pic": "https://picsum.photos/id/1012/50/50",
-    "caption": "Beautiful wild nature 🐻🌊 #explore"
-  },
-  {
-    "id": 3,
-    "title": "Trending Reel 3",
-    "video_url": "https://www.w3schools.com/html/mov_bbb.mp4",
-    "username": "creative_mind",
-    "profile_pic": "https://picsum.photos/id/1062/50/50",
-    "caption": "Keep scrolling for more fun! ✨ #trending"
+    "caption": "Beautiful wild nature 🐻🌊 #explore",
+    "comments": [
+      {"username": "travel_guru", "text": "Wow, what a view! 🗺️"}
+    ]
   }
 ]
