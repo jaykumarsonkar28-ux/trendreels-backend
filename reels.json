@@ -2,16 +2,25 @@
   {
     "id": 1,
     "title": "Trending Reel 1",
-    "video_url": "https://www.w3schools.com/html/mov_bbb.mp4"
+    "video_url": "https://www.w3schools.com/html/mov_bbb.mp4",
+    "username": "jay_kumar",
+    "profile_pic": "https://picsum.photos/id/1025/50/50",
+    "caption": "Amazing day coding this app! 💻🔥 #development"
   },
   {
     "id": 2,
     "title": "Trending Reel 2",
-    "video_url": "https://www.w3schools.com/html/movie.mp4"
+    "video_url": "https://www.w3schools.com/html/movie.mp4",
+    "username": "nature_lover",
+    "profile_pic": "https://picsum.photos/id/1012/50/50",
+    "caption": "Beautiful wild nature 🐻🌊 #explore"
   },
   {
     "id": 3,
     "title": "Trending Reel 3",
-    "video_url": "https://www.w3schools.com/html/mov_bbb.mp4"
+    "video_url": "https://www.w3schools.com/html/mov_bbb.mp4",
+    "username": "creative_mind",
+    "profile_pic": "https://picsum.photos/id/1062/50/50",
+    "caption": "Keep scrolling for more fun! ✨ #trending"
   }
 ]
