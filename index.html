@@ -85,7 +85,7 @@
             right: 80px;
             z-index: 10;
             text-shadow: 1px 1px 5px rgba(0,0,0,0.8);
-            pointer-events: none; /* Isse double click overlay par na atak kar seedhe video par lagega */
+            pointer-events: none;
         }
         .profile-section {
             display: flex;
@@ -120,7 +120,6 @@
             pointer-events: none;
             opacity: 0;
         }
-        /* Instagram Style Smooth Pop Effect */
         .heart-popup.animate {
             animation: heartPopEffect 0.7s ease-in-out forwards;
         }
@@ -226,24 +225,29 @@
                     const card = document.createElement('div');
                     card.className = 'reel-card';
                     
+                    // 1. LocalStorage se pehle se saved comments nikalna 📤
+                    let savedComments = localStorage.getItem(`comments_${reel.id}`);
+                    let commentsArray = savedComments ? JSON.parse(savedComments) : (reel.comments || []);
+                    
                     let commentsHTML = '';
-                    if(reel.comments) {
-                        reel.comments.forEach(c => {
-                            commentsHTML += `
-                                <div class="comment-item">
-                                    <span class="comment-user">@${c.username}</span>
-                                    <span class="comment-text">${c.text}</span>
-                                </div>`;
-                        });
-                    }
+                    commentsArray.forEach(c => {
+                        commentsHTML += `
+                            <div class="comment-item">
+                                <span class="comment-user">@${c.username}</span>
+                                <span class="comment-text">${c.text}</span>
+                            </div>`;
+                    });
 
-                    // Pure HTML se inline click events (onclick) poori tarah saaf kar diye hain
+                    // 2. LocalStorage se Like ka status check karna ❤️
+                    let isLiked = localStorage.getItem(`like_${reel.id}`) === 'true';
+                    let likeIcon = isLiked ? '❤️' : '🤍';
+
                     card.innerHTML = `
                         <video class="reel-video" src="${reel.video_url}" loop muted playsinline></video>
                         <div class="heart-popup">❤️</div>
                         
                         <div class="reels-buttons">
-                            <button class="action-btn like-btn">🤍</button>
+                            <button class="action-btn like-btn">${likeIcon}</button>
                             <button class="action-btn comment-btn">💬</button>
                         </div>
 
@@ -269,8 +273,7 @@
                         </div>
                     `;
                     
-                    // Har card banne par uske event handlers attach honge
-                    bindReelEvents(card);
+                    bindReelEvents(card, reel.id, commentsArray);
                     container.appendChild(card);
                 }
 
@@ -281,8 +284,7 @@
             }
         }
 
-        // Card Level Event Handling Logic 🛠️
-        function bindReelEvents(card) {
+        function bindReelEvents(card, reelId, commentsArray) {
             const video = card.querySelector('.reel-video');
             const heart = card.querySelector('.heart-popup');
             const likeBtn = card.querySelector('.like-btn');
@@ -293,36 +295,45 @@
             const inputBox = card.querySelector('.new-comment-box');
             const commentsList = card.querySelector('.comments-list');
 
-            // 1. Like Button Click Toggle
-            likeBtn.addEventListener('click', () => {
-                likeBtn.innerText = likeBtn.innerText === '🤍' ? '❤️' : '🤍';
-            });
+            // Like status toggle aur save karna 📥
+            const triggerLike = (forceLike = false) => {
+                let currentlyLiked = likeBtn.innerText === '❤️';
+                if (forceLike) currentlyLiked = false; // Double tap hamesha like karega
 
-            // 2. Open Comments Panel
-            commentBtn.addEventListener('click', () => {
-                sheet.classList.add('open');
-            });
+                if (!currentlyLiked) {
+                    likeBtn.innerText = '❤️';
+                    localStorage.setItem(`like_${reelId}`, 'true');
+                } else {
+                    likeBtn.innerText = '🤍';
+                    localStorage.setItem(`like_${reelId}`, 'false');
+                }
+            };
 
-            // 3. Close Comments Panel
-            closeBtn.addEventListener('click', () => {
-                sheet.classList.remove('open');
-            });
+            likeBtn.addEventListener('click', () => triggerLike());
 
-            // 4. Comment Add karne ki logic (Button click & Enter Key dono par chalega)
+            commentBtn.addEventListener('click', () => sheet.classList.add('open'));
+            closeBtn.addEventListener('click', () => sheet.classList.remove('open'));
+
+            // New comment ko array mein add karke LocalStorage mein save karna 📥
             const submitComment = () => {
                 const commentText = inputBox.value.trim();
                 if (commentText === '') return;
 
                 const noCommentsText = commentsList.querySelector('.no-comments');
-                if (noCommentsText) noCommentsText.remove(); // "No comments yet" text ko hatata hai
+                if (noCommentsText) noCommentsText.remove();
 
+                // Naye comment ko screen par jodhna
                 const newComment = document.createElement('div');
                 newComment.className = 'comment-item';
                 newComment.innerHTML = `<span class="comment-user">@you</span><span class="comment-text">${commentText}</span>`;
-                
                 commentsList.appendChild(newComment);
-                inputBox.value = ''; // Input box khali karein
-                commentsList.scrollTop = commentsList.scrollHeight; // Bottom tak auto-scroll
+
+                // LocalStorage data update logic
+                commentsArray.push({ username: 'you', text: commentText });
+                localStorage.setItem(`comments_${reelId}`, JSON.stringify(commentsArray));
+
+                inputBox.value = '';
+                commentsList.scrollTop = commentsList.scrollHeight;
             };
 
             postBtn.addEventListener('click', submitComment);
@@ -330,26 +341,24 @@
                 if (e.key === 'Enter') submitComment();
             });
 
-            // 5. Smart Tap Manager: Single Tap (Play/Pause) aur Double Tap (Like) ka mix handle
+            // Tap manager logic
             let tapTimer = null;
             video.addEventListener('click', () => {
                 if (!tapTimer) {
                     tapTimer = setTimeout(() => {
-                        // Single Tap: Video play/pause toggle
                         if (video.paused) {
                             video.play().catch(err => console.log(err));
                         } else {
                             video.pause();
                         }
                         tapTimer = null;
-                    }, 250); // 250ms wait karega dusre click ke liye
+                    }, 250);
                 } else {
-                    // Double Tap: Like animation trigger
                     clearTimeout(tapTimer);
                     tapTimer = null;
 
                     heart.classList.add('animate');
-                    likeBtn.innerText = '❤️';
+                    triggerLike(true); // Like ko force true karein
 
                     setTimeout(() => {
                         heart.classList.remove('animate');
@@ -358,11 +367,9 @@
             });
         }
 
-        // Global Reels Control Strategy (Autoplay + Unmute) ⚙️
         function setupReelController() {
             const videos = document.querySelectorAll('.reel-video');
 
-            // Browser Policy Unmute Fix: Screen par pehla touch/click hote hi sound on ho jayega
             const unmuteAll = () => {
                 videos.forEach(v => v.muted = false);
                 document.removeEventListener('click', unmuteAll);
@@ -371,7 +378,6 @@
             document.addEventListener('click', unmuteAll);
             document.addEventListener('touchstart', unmuteAll);
 
-            // Intersection Observer: Jo samne hai wahi chalega
             const observerOptions = {
                 root: container,
                 threshold: 0.6
@@ -384,10 +390,10 @@
                     const sheet = card.querySelector('.comment-sheet');
 
                     if (entry.isIntersecting) {
-                        video.play().catch(err => console.log("Autoplay waiting interaction"));
+                        video.play().catch(err => console.log("Autoplay waiting"));
                     } else {
                         video.pause();
-                        if (sheet) sheet.classList.remove('open'); // Swipe karte hi open comments panel band ho jaye
+                        if (sheet) sheet.classList.remove('open');
                     }
                 });
             }, observerOptions);
