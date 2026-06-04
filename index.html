@@ -131,9 +131,9 @@
             100% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
         }
 
-        /* Comment Bottom Sheet 📋 */
+        /* Global Shared Comment Bottom Sheet (Fixed to Screen) 📋 */
         .comment-sheet {
-            position: absolute;
+            position: fixed;
             bottom: -60vh;
             left: 0;
             width: 100%;
@@ -141,7 +141,7 @@
             background: #1a1a1a;
             border-top-left-radius: 20px;
             border-top-right-radius: 20px;
-            z-index: 20;
+            z-index: 100;
             transition: bottom 0.3s cubic-bezier(0.1, 0.76, 0.55, 0.94);
             padding: 20px;
             display: flex;
@@ -212,9 +212,26 @@
 
     <div class="reels-container" id="reelsContainer"></div>
 
+    <div class="comment-sheet" id="globalCommentSheet">
+        <div class="sheet-header">
+            <h3>Comments</h3>
+            <button class="close-btn" id="globalCloseBtn">✕</button>
+        </div>
+        <div class="comments-list" id="globalCommentsList"></div>
+        
+        <div class="comment-input-area">
+            <input type="text" class="new-comment-box" id="globalCommentInput" placeholder="Add a comment...">
+            <button class="post-comment-btn" id="globalPostBtn">Post</button>
+        </div>
+    </div>
+
     <script>
         const jsonUrl = 'https://jaykumarsonkar28-ux.github.io/trendreels-backend/reels.json?v=' + new Date().getTime();
         const container = document.getElementById('reelsContainer');
+        
+        // Global States
+        let currentReelId = null;
+        let currentCommentsArray = [];
 
         async function loadReels() {
             try {
@@ -225,20 +242,6 @@
                     const card = document.createElement('div');
                     card.className = 'reel-card';
                     
-                    // 1. LocalStorage se pehle se saved comments nikalna 📤
-                    let savedComments = localStorage.getItem(`comments_${reel.id}`);
-                    let commentsArray = savedComments ? JSON.parse(savedComments) : (reel.comments || []);
-                    
-                    let commentsHTML = '';
-                    commentsArray.forEach(c => {
-                        commentsHTML += `
-                            <div class="comment-item">
-                                <span class="comment-user">@${c.username}</span>
-                                <span class="comment-text">${c.text}</span>
-                            </div>`;
-                    });
-
-                    // 2. LocalStorage se Like ka status check karna ❤️
                     let isLiked = localStorage.getItem(`like_${reel.id}`) === 'true';
                     let likeIcon = isLiked ? '❤️' : '🤍';
 
@@ -258,47 +261,32 @@
                             </div>
                             <div class="reel-caption">${reel.caption}</div>
                         </div>
-
-                        <div class="comment-sheet">
-                            <div class="sheet-header">
-                                <h3>Comments</h3>
-                                <button class="close-btn">✕</button>
-                            </div>
-                            <div class="comments-list">${commentsHTML || '<p class="no-comments" style="color:#777;">No comments yet</p>'}</div>
-                            
-                            <div class="comment-input-area">
-                                <input type="text" class="new-comment-box" placeholder="Add a comment...">
-                                <button class="post-comment-btn">Post</button>
-                            </div>
-                        </div>
                     `;
                     
-                    bindReelEvents(card, reel.id, commentsArray);
+                    // JSON comments ko store karke pass karna
+                    let initialComments = reel.comments || [];
+                    bindReelEvents(card, reel.id, initialComments);
                     container.appendChild(card);
                 }
 
                 setupReelController();
+                setupGlobalCommentSheet();
 
             } catch (error) {
                 console.error('Reels load karne mein dikkat aayi:', error);
             }
         }
 
-        function bindReelEvents(card, reelId, commentsArray) {
+        function bindReelEvents(card, reelId, initialComments) {
             const video = card.querySelector('.reel-video');
             const heart = card.querySelector('.heart-popup');
             const likeBtn = card.querySelector('.like-btn');
             const commentBtn = card.querySelector('.comment-btn');
-            const closeBtn = card.querySelector('.close-btn');
-            const sheet = card.querySelector('.comment-sheet');
-            const postBtn = card.querySelector('.post-comment-btn');
-            const inputBox = card.querySelector('.new-comment-box');
-            const commentsList = card.querySelector('.comments-list');
 
-            // Like status toggle aur save karna 📥
+            // Like Handle
             const triggerLike = (forceLike = false) => {
                 let currentlyLiked = likeBtn.innerText === '❤️';
-                if (forceLike) currentlyLiked = false; // Double tap hamesha like karega
+                if (forceLike) currentlyLiked = false;
 
                 if (!currentlyLiked) {
                     likeBtn.innerText = '❤️';
@@ -311,37 +299,19 @@
 
             likeBtn.addEventListener('click', () => triggerLike());
 
-            commentBtn.addEventListener('click', () => sheet.classList.add('open'));
-            closeBtn.addEventListener('click', () => sheet.classList.remove('open'));
-
-            // New comment ko array mein add karke LocalStorage mein save karna 📥
-            const submitComment = () => {
-                const commentText = inputBox.value.trim();
-                if (commentText === '') return;
-
-                const noCommentsText = commentsList.querySelector('.no-comments');
-                if (noCommentsText) noCommentsText.remove();
-
-                // Naye comment ko screen par jodhna
-                const newComment = document.createElement('div');
-                newComment.className = 'comment-item';
-                newComment.innerHTML = `<span class="comment-user">@you</span><span class="comment-text">${commentText}</span>`;
-                commentsList.appendChild(newComment);
-
-                // LocalStorage data update logic
-                commentsArray.push({ username: 'you', text: commentText });
-                localStorage.setItem(`comments_${reelId}`, JSON.stringify(commentsArray));
-
-                inputBox.value = '';
-                commentsList.scrollTop = commentsList.scrollHeight;
-            };
-
-            postBtn.addEventListener('click', submitComment);
-            inputBox.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') submitComment();
+            // Comment Button Click - Open Global Sheet 🔓
+            commentBtn.addEventListener('click', () => {
+                currentReelId = reelId;
+                
+                // Fetch from LocalStorage or fallback to JSON data
+                let savedComments = localStorage.getItem(`comments_${reelId}`);
+                currentCommentsArray = savedComments ? JSON.parse(savedComments) : initialComments;
+                
+                renderGlobalComments();
+                document.getElementById('globalCommentSheet').classList.add('open');
             });
 
-            // Tap manager logic
+            // Tap Manager (Play/Pause vs Double Tap Like)
             let tapTimer = null;
             video.addEventListener('click', () => {
                 if (!tapTimer) {
@@ -358,7 +328,7 @@
                     tapTimer = null;
 
                     heart.classList.add('animate');
-                    triggerLike(true); // Like ko force true karein
+                    triggerLike(true);
 
                     setTimeout(() => {
                         heart.classList.remove('animate');
@@ -367,8 +337,62 @@
             });
         }
 
+        // Global Comment Sheet Render & Post Logic 📝
+        function renderGlobalComments() {
+            const listContainer = document.getElementById('globalCommentsList');
+            let commentsHTML = '';
+            
+            currentCommentsArray.forEach(c => {
+                commentsHTML += `
+                    <div class="comment-item">
+                        <span class="comment-user">@${c.username}</span>
+                        <span class="comment-text">${c.text}</span>
+                    </div>`;
+            });
+            
+            listContainer.innerHTML = commentsHTML || '<p class="no-comments" style="color:#777;">No comments yet</p>';
+            listContainer.scrollTop = listContainer.scrollHeight;
+        }
+
+        function setupGlobalCommentSheet() {
+            const sheet = document.getElementById('globalCommentSheet');
+            const closeBtn = document.getElementById('globalCloseBtn');
+            const postBtn = document.getElementById('globalPostBtn');
+            const inputBox = document.getElementById('globalCommentInput');
+            const commentsList = document.getElementById('globalCommentsList');
+
+            closeBtn.addEventListener('click', () => sheet.classList.remove('open'));
+
+            const submitComment = () => {
+                const commentText = inputBox.value.trim();
+                if (commentText === '' || currentReelId === null) return;
+
+                const noCommentsText = commentsList.querySelector('.no-comments');
+                if (noCommentsText) noCommentsText.remove();
+
+                // Append New Comment visually
+                const newComment = document.createElement('div');
+                newComment.className = 'comment-item';
+                newComment.innerHTML = `<span class="comment-user">@you</span><span class="comment-text">${commentText}</span>`;
+                commentsList.appendChild(newComment);
+
+                // Save to LocalStorage
+                currentCommentsArray.push({ username: 'you', text: commentText });
+                localStorage.setItem(`comments_${currentReelId}`, JSON.stringify(currentCommentsArray));
+
+                inputBox.value = '';
+                commentsList.scrollTop = commentsList.scrollHeight;
+            };
+
+            postBtn.addEventListener('click', submitComment);
+            inputBox.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') submitComment();
+            });
+        }
+
         function setupReelController() {
             const videos = document.querySelectorAll('.reel-video');
+            const sheet = document.getElementById('globalCommentSheet');
 
             const unmuteAll = () => {
                 videos.forEach(v => v.muted = false);
@@ -386,14 +410,13 @@
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     const video = entry.target;
-                    const card = video.closest('.reel-card');
-                    const sheet = card.querySelector('.comment-sheet');
 
                     if (entry.isIntersecting) {
                         video.play().catch(err => console.log("Autoplay waiting"));
                     } else {
                         video.pause();
-                        if (sheet) sheet.classList.remove('open');
+                        // Scroll hote hi sheet niche chali jayegi aur automatic band ho jayegi 📴
+                        sheet.classList.remove('open');
                     }
                 });
             }, observerOptions);
