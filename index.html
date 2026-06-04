@@ -43,6 +43,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            cursor: pointer;
         }
 
         /* Right Side Buttons Container ↕️ */
@@ -53,7 +54,7 @@
             display: flex;
             flex-direction: column;
             gap: 20px;
-            z-index: 10;
+            z-index: 12;
         }
 
         /* Individual Button Style 🔘 */
@@ -70,6 +71,10 @@
             align-items: center;
             justify-content: center;
             box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
+            transition: transform 0.1s ease;
+        }
+        .action-btn:active {
+            transform: scale(0.9);
         }
 
         /* Profile aur Caption Overlay 💬 */
@@ -80,6 +85,7 @@
             right: 80px;
             z-index: 10;
             text-shadow: 1px 1px 5px rgba(0,0,0,0.8);
+            pointer-events: none; /* Isse double click overlay par na atak kar seedhe video par lagega */
         }
         .profile-section {
             display: flex;
@@ -109,13 +115,21 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%) scale(0);
-            font-size: 80px;
+            font-size: 90px;
             z-index: 11;
             pointer-events: none;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0;
         }
+        /* Instagram Style Smooth Pop Effect */
         .heart-popup.animate {
-            transform: translate(-50%, -50%) scale(1);
+            animation: heartPopEffect 0.7s ease-in-out forwards;
+        }
+        @keyframes heartPopEffect {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            15% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+            30% { transform: translate(-50%, -50%) scale(1.0); opacity: 1; }
+            80% { transform: translate(-50%, -50%) scale(1.0); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
         }
 
         /* Comment Bottom Sheet 📋 */
@@ -129,7 +143,7 @@
             border-top-left-radius: 20px;
             border-top-right-radius: 20px;
             z-index: 20;
-            transition: bottom 0.3s ease;
+            transition: bottom 0.3s cubic-bezier(0.1, 0.76, 0.55, 0.94);
             padding: 20px;
             display: flex;
             flex-direction: column;
@@ -167,7 +181,7 @@
             margin-right: 5px;
         }
 
-        /* New Comment Input Area Style 📝 */
+        /* Comment Input Area Style 📝 */
         .comment-input-area {
             display: flex;
             gap: 10px;
@@ -223,18 +237,19 @@
                         });
                     }
 
+                    // Pure HTML se inline click events (onclick) poori tarah saaf kar diye hain
                     card.innerHTML = `
-                        <video class="reel-video" src="${reel.video_url}" loop muted playsinline ondblclick="handleDoubleTap(this)"></video>
+                        <video class="reel-video" src="${reel.video_url}" loop muted playsinline></video>
                         <div class="heart-popup">❤️</div>
                         
                         <div class="reels-buttons">
-                            <button class="action-btn" onclick="toggleLikeBtn(this)">🤍</button>
-                            <button class="action-btn" onclick="toggleComments(this)">💬</button>
+                            <button class="action-btn like-btn">🤍</button>
+                            <button class="action-btn comment-btn">💬</button>
                         </div>
 
                         <div class="reel-overlay">
                             <div class="profile-section">
-                                <img class="profile-pic" src="${reel.profile_pic}" alt="profile">
+                                <img class="profile-pic" src="${reel.profile_pic || 'https://via.placeholder.com/35'}" alt="profile">
                                 <span class="username">@${reel.username}</span>
                             </div>
                             <div class="reel-caption">${reel.caption}</div>
@@ -243,17 +258,19 @@
                         <div class="comment-sheet">
                             <div class="sheet-header">
                                 <h3>Comments</h3>
-                                <button class="close-btn" onclick="toggleComments(this, true)">✕</button>
+                                <button class="close-btn">✕</button>
                             </div>
-                            <div class="comments-list">${commentsHTML || '<p style="color:#777;">No comments yet</p>'}</div>
+                            <div class="comments-list">${commentsHTML || '<p class="no-comments" style="color:#777;">No comments yet</p>'}</div>
                             
-                            <!-- Naya Comment Input Area 📥 -->
                             <div class="comment-input-area">
                                 <input type="text" class="new-comment-box" placeholder="Add a comment...">
-                                <button class="post-comment-btn" onclick="addComment(this)">Post</button>
+                                <button class="post-comment-btn">Post</button>
                             </div>
                         </div>
                     `;
+                    
+                    // Har card banne par uske event handlers attach honge
+                    bindReelEvents(card);
                     container.appendChild(card);
                 }
 
@@ -264,74 +281,97 @@
             }
         }
 
-        // Add New Comment Function ✍️
-        function addComment(button) {
-            const inputArea = button.parentElement;
-            const inputBox = inputArea.querySelector('.new-comment-box');
-            const commentText = inputBox.value.trim(); // .value se text nikala 📌
-            
-            if (commentText === '') return; 
-            
-            const card = button.closest('.reel-card');
-            const commentsList = card.querySelector('.comments-list');
-            
-            if (commentsList.querySelector('p')) {
-                commentsList.innerHTML = ''; 
-            }
-            
-            const newCommentHTML = `
-                <div class="comment-item">
-                    <span class="comment-user">@you</span>
-                    <span class="comment-text">${commentText}</span>
-                </div>
-            `;
-            
-            commentsList.innerHTML += newCommentHTML;
-            inputBox.value = ''; // Input clear kiya
-            
-            // Scroll to bottom
-            const listContainer = card.querySelector('.comments-list');
-            listContainer.scrollTop = listContainer.scrollHeight;
-        }
-
-        function handleDoubleTap(videoElement) {
-            const card = videoElement.closest('.reel-card');
+        // Card Level Event Handling Logic 🛠️
+        function bindReelEvents(card) {
+            const video = card.querySelector('.reel-video');
             const heart = card.querySelector('.heart-popup');
-            const likeBtn = card.querySelector('.reels-buttons button:first-child');
-            
-            heart.classList.add('animate');
-            likeBtn.innerText = '❤️';
-            
-            setTimeout(() => {
-                heart.classList.remove('animate');
-            }, 500);
-        }
-
-        function toggleLikeBtn(button) {
-            button.innerText = button.innerText === '🤍' ? '❤️' : '🤍';
-        }
-
-        function toggleComments(element, isClose = false) {
-            const card = element.closest('.reel-card');
+            const likeBtn = card.querySelector('.like-btn');
+            const commentBtn = card.querySelector('.comment-btn');
+            const closeBtn = card.querySelector('.close-btn');
             const sheet = card.querySelector('.comment-sheet');
-            if (isClose) {
-                sheet.classList.remove('open');
-            } else {
+            const postBtn = card.querySelector('.post-comment-btn');
+            const inputBox = card.querySelector('.new-comment-box');
+            const commentsList = card.querySelector('.comments-list');
+
+            // 1. Like Button Click Toggle
+            likeBtn.addEventListener('click', () => {
+                likeBtn.innerText = likeBtn.innerText === '🤍' ? '❤️' : '🤍';
+            });
+
+            // 2. Open Comments Panel
+            commentBtn.addEventListener('click', () => {
                 sheet.classList.add('open');
-            }
+            });
+
+            // 3. Close Comments Panel
+            closeBtn.addEventListener('click', () => {
+                sheet.classList.remove('open');
+            });
+
+            // 4. Comment Add karne ki logic (Button click & Enter Key dono par chalega)
+            const submitComment = () => {
+                const commentText = inputBox.value.trim();
+                if (commentText === '') return;
+
+                const noCommentsText = commentsList.querySelector('.no-comments');
+                if (noCommentsText) noCommentsText.remove(); // "No comments yet" text ko hatata hai
+
+                const newComment = document.createElement('div');
+                newComment.className = 'comment-item';
+                newComment.innerHTML = `<span class="comment-user">@you</span><span class="comment-text">${commentText}</span>`;
+                
+                commentsList.appendChild(newComment);
+                inputBox.value = ''; // Input box khali karein
+                commentsList.scrollTop = commentsList.scrollHeight; // Bottom tak auto-scroll
+            };
+
+            postBtn.addEventListener('click', submitComment);
+            inputBox.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') submitComment();
+            });
+
+            // 5. Smart Tap Manager: Single Tap (Play/Pause) aur Double Tap (Like) ka mix handle
+            let tapTimer = null;
+            video.addEventListener('click', () => {
+                if (!tapTimer) {
+                    tapTimer = setTimeout(() => {
+                        // Single Tap: Video play/pause toggle
+                        if (video.paused) {
+                            video.play().catch(err => console.log(err));
+                        } else {
+                            video.pause();
+                        }
+                        tapTimer = null;
+                    }, 250); // 250ms wait karega dusre click ke liye
+                } else {
+                    // Double Tap: Like animation trigger
+                    clearTimeout(tapTimer);
+                    tapTimer = null;
+
+                    heart.classList.add('animate');
+                    likeBtn.innerText = '❤️';
+
+                    setTimeout(() => {
+                        heart.classList.remove('animate');
+                    }, 700);
+                }
+            });
         }
 
+        // Global Reels Control Strategy (Autoplay + Unmute) ⚙️
         function setupReelController() {
             const videos = document.querySelectorAll('.reel-video');
 
-            document.body.addEventListener('click', (e) => {
-                if(e.target.closest('.reels-buttons') || e.target.closest('.comment-sheet')) return;
-                
-                videos.forEach(video => {
-                    video.muted = false;
-                });
-            }, { once: true });
+            // Browser Policy Unmute Fix: Screen par pehla touch/click hote hi sound on ho jayega
+            const unmuteAll = () => {
+                videos.forEach(v => v.muted = false);
+                document.removeEventListener('click', unmuteAll);
+                document.removeEventListener('touchstart', unmuteAll);
+            };
+            document.addEventListener('click', unmuteAll);
+            document.addEventListener('touchstart', unmuteAll);
 
+            // Intersection Observer: Jo samne hai wahi chalega
             const observerOptions = {
                 root: container,
                 threshold: 0.6
@@ -340,12 +380,14 @@
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     const video = entry.target;
+                    const card = video.closest('.reel-card');
+                    const sheet = card.querySelector('.comment-sheet');
+
                     if (entry.isIntersecting) {
-                        video.play().catch(err => console.log("Autoplay waiting"));
+                        video.play().catch(err => console.log("Autoplay waiting interaction"));
                     } else {
                         video.pause();
-                        const card = video.closest('.reel-card');
-                        card.querySelector('.comment-sheet').classList.remove('open');
+                        if (sheet) sheet.classList.remove('open'); // Swipe karte hi open comments panel band ho jaye
                     }
                 });
             }, observerOptions);
