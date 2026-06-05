@@ -85,7 +85,6 @@
             right: 80px;
             z-index: 10;
             text-shadow: 1px 1px 5px rgba(0,0,0,0.8);
-            pointer-events: none;
         }
         .profile-section {
             display: flex;
@@ -99,10 +98,31 @@
             border-radius: 50%;
             border: 2px solid #fff;
             object-fit: cover;
+            cursor: pointer;
+            pointer-events: auto;
         }
         .username {
             font-size: 16px;
             font-weight: bold;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        /* Follow Button Style 👥 */
+        .follow-btn {
+            background: #3897f0;
+            color: #fff;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .follow-btn.following {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
         }
         .reel-caption {
             font-size: 14px;
@@ -131,7 +151,7 @@
             100% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
         }
 
-        /* Global Shared Comment Bottom Sheet (Fixed to Screen) 📋 */
+        /* Global Comment Sheet 📋 */
         .comment-sheet {
             position: fixed;
             bottom: -60vh;
@@ -179,8 +199,6 @@
             color: #3897f0;
             margin-right: 5px;
         }
-
-        /* Comment Input Area Style 📝 */
         .comment-input-area {
             display: flex;
             gap: 10px;
@@ -206,6 +224,63 @@
             font-size: 14px;
             cursor: pointer;
         }
+
+        /* Full Screen Profile View Layout 👤 */
+        .profile-view {
+            position: fixed;
+            top: 100vh;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: #000;
+            z-index: 200;
+            transition: top 0.3s cubic-bezier(0.1, 0.76, 0.55, 0.94);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .profile-view.open {
+            top: 0;
+        }
+        .profile-header-area {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .profile-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .profile-view-pic {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .profile-view-username {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .profile-view-bio {
+            font-size: 14px;
+            color: #ccc;
+        }
+        
+        /* 3-Column Grid Post System 📊 */
+        .posts-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 3px;
+            margin-top: 10px;
+        }
+        .grid-post-img {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            background: #222;
+        }
     </style>
 </head>
 <body>
@@ -218,18 +293,30 @@
             <button class="close-btn" id="globalCloseBtn">✕</button>
         </div>
         <div class="comments-list" id="globalCommentsList"></div>
-        
         <div class="comment-input-area">
             <input type="text" class="new-comment-box" id="globalCommentInput" placeholder="Add a comment...">
             <button class="post-comment-btn" id="globalPostBtn">Post</button>
         </div>
     </div>
 
+    <div class="profile-view" id="globalProfileView">
+        <div class="profile-header-area">
+            <span class="profile-view-username" id="pViewUsername">@username</span>
+            <button class="close-btn" id="profileCloseBtn" style="font-size: 24px;">✕</button>
+        </div>
+        <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 15px;">
+            <img class="profile-view-pic" id="pViewPic" src="" alt="profile">
+            <div class="profile-view-bio" id="pViewBio">User bio description goes here...</div>
+        </div>
+        <hr style="border-color: #222; margin-bottom: 15px;">
+        <h4 style="margin-bottom: 10px;">Posts</h4>
+        <div class="posts-grid" id="pViewGrid"></div>
+    </div>
+
     <script>
         const jsonUrl = 'https://jaykumarsonkar28-ux.github.io/trendreels-backend/reels.json?v=' + new Date().getTime();
         const container = document.getElementById('reelsContainer');
         
-        // Global States
         let currentReelId = null;
         let currentCommentsArray = [];
 
@@ -245,6 +332,11 @@
                     let isLiked = localStorage.getItem(`like_${reel.id}`) === 'true';
                     let likeIcon = isLiked ? '❤️' : '🤍';
 
+                    // LocalStorage se follow status check karna 👥
+                    let savedFollow = localStorage.getItem(`follow_${reel.username}`);
+                    let currentFollowText = savedFollow ? savedFollow : (reel.follow_status || 'Follow');
+                    let followClass = currentFollowText === 'Following' ? 'follow-btn following' : 'follow-btn';
+
                     card.innerHTML = `
                         <video class="reel-video" src="${reel.video_url}" loop muted playsinline></video>
                         <div class="heart-popup">❤️</div>
@@ -252,66 +344,118 @@
                         <div class="reels-buttons">
                             <button class="action-btn like-btn">${likeIcon}</button>
                             <button class="action-btn comment-btn">💬</button>
+                            <button class="action-btn share-btn">🔗</button>
                         </div>
 
                         <div class="reel-overlay">
                             <div class="profile-section">
                                 <img class="profile-pic" src="${reel.profile_pic || 'https://via.placeholder.com/35'}" alt="profile">
                                 <span class="username">@${reel.username}</span>
+                                <button class="${followClass}">${currentFollowText}</button>
                             </div>
                             <div class="reel-caption">${reel.caption}</div>
                         </div>
                     `;
                     
-                    // JSON comments ko store karke pass karna
-                    let initialComments = reel.comments || [];
-                    bindReelEvents(card, reel.id, initialComments);
+                    bindReelEvents(card, reel);
                     container.appendChild(card);
                 }
 
                 setupReelController();
                 setupGlobalCommentSheet();
+                setupGlobalProfileView();
 
             } catch (error) {
                 console.error('Reels load karne mein dikkat aayi:', error);
             }
         }
 
-        function bindReelEvents(card, reelId, initialComments) {
+        function bindReelEvents(card, reel) {
             const video = card.querySelector('.reel-video');
             const heart = card.querySelector('.heart-popup');
             const likeBtn = card.querySelector('.like-btn');
             const commentBtn = card.querySelector('.comment-btn');
+            const shareBtn = card.querySelector('.share-btn');
+            const followBtn = card.querySelector('.follow-btn');
+            const profilePic = card.querySelector('.profile-pic');
+            const usernameText = card.querySelector('.username');
 
-            // Like Handle
+            // Like Logic
             const triggerLike = (forceLike = false) => {
                 let currentlyLiked = likeBtn.innerText === '❤️';
                 if (forceLike) currentlyLiked = false;
 
                 if (!currentlyLiked) {
                     likeBtn.innerText = '❤️';
-                    localStorage.setItem(`like_${reelId}`, 'true');
+                    localStorage.setItem(`like_${reel.id}`, 'true');
                 } else {
                     likeBtn.innerText = '🤍';
-                    localStorage.setItem(`like_${reelId}`, 'false');
+                    localStorage.setItem(`like_${reel.id}`, 'false');
                 }
             };
-
             likeBtn.addEventListener('click', () => triggerLike());
 
-            // Comment Button Click - Open Global Sheet 🔓
-            commentBtn.addEventListener('click', () => {
-                currentReelId = reelId;
-                
-                // Fetch from LocalStorage or fallback to JSON data
-                let savedComments = localStorage.getItem(`comments_${reelId}`);
-                currentCommentsArray = savedComments ? JSON.parse(savedComments) : initialComments;
-                
-                renderGlobalComments();
-                document.getElementById('globalCommentSheet').classList.add('open');
+            // Follow Button Toggle Logic 👥
+            followBtn.addEventListener('click', () => {
+                if (followBtn.innerText === 'Follow') {
+                    followBtn.innerText = 'Following';
+                    followBtn.classList.add('following');
+                    localStorage.setItem(`follow_${reel.username}`, 'following');
+                } else {
+                    followBtn.innerText = 'Follow';
+                    followBtn.classList.remove('following');
+                    localStorage.setItem(`follow_${reel.username}`, 'Follow');
+                }
             });
 
-            // Tap Manager (Play/Pause vs Double Tap Like)
+            // Share Button Action (Native Phone Menu) 🔗
+            shareBtn.addEventListener('click', async () => {
+                if (navigator.share) {
+                    try {
+                        await navigator.share({
+                            title: reel.title,
+                            text: reel.caption,
+                            url: reel.video_url
+                        });
+                    } catch (err) {
+                        console.log("Share cancelled");
+                    }
+                } else {
+                    // Fallback agar API support na kare
+                    navigator.clipboard.writeText(reel.video_url);
+                    alert("Video link copied to clipboard! 🔗");
+                }
+            });
+
+            // Open Profile Sheet Click Events 👤
+            const openProfile = () => {
+                document.getElementById('pViewUsername').innerText = `@${reel.username}`;
+                document.getElementById('pViewPic').src = reel.profile_pic || 'https://via.placeholder.com/80';
+                document.getElementById('pViewBio').innerText = reel.bio || 'No bio available';
+                
+                // Grid Images Rendering
+                const gridContainer = document.getElementById('pViewGrid');
+                gridContainer.innerHTML = '';
+                if (reel.posts && reel.posts.length > 0) {
+                    reel.posts.forEach(postUrl => {
+                        const img = document.createElement('img');
+                        img.className = 'grid-post-img';
+                        img.src = postUrl;
+                        gridContainer.appendChild(img);
+                    });
+                } else {
+                    gridContainer.innerHTML = '<p style="color:#777; grid-column: span 3; text-align:center;">No posts yet</p>';
+                }
+
+                // Video pause handle
+                video.pause();
+                document.getElementById('globalProfileView').classList.add('open');
+            };
+
+            profilePic.addEventListener('click', openProfile);
+            usernameText.addEventListener('click', openProfile);
+
+            // Tap Manager (Play/Pause vs Double Tap)
             let tapTimer = null;
             video.addEventListener('click', () => {
                 if (!tapTimer) {
@@ -326,57 +470,42 @@
                 } else {
                     clearTimeout(tapTimer);
                     tapTimer = null;
-
                     heart.classList.add('animate');
                     triggerLike(true);
-
-                    setTimeout(() => {
-                        heart.classList.remove('animate');
-                    }, 700);
+                    setTimeout(() => heart.classList.remove('animate'), 700);
                 }
             });
         }
 
-        // Global Comment Sheet Render & Post Logic 📝
+        // Global Comments Box Management
         function renderGlobalComments() {
             const listContainer = document.getElementById('globalCommentsList');
             let commentsHTML = '';
-            
             currentCommentsArray.forEach(c => {
-                commentsHTML += `
-                    <div class="comment-item">
-                        <span class="comment-user">@${c.username}</span>
-                        <span class="comment-text">${c.text}</span>
-                    </div>`;
+                commentsHTML += `<div class="comment-item"><span class="comment-user">@${c.username}</span><span class="comment-text">${c.text}</span></div>`;
             });
-            
             listContainer.innerHTML = commentsHTML || '<p class="no-comments" style="color:#777;">No comments yet</p>';
             listContainer.scrollTop = listContainer.scrollHeight;
         }
 
         function setupGlobalCommentSheet() {
             const sheet = document.getElementById('globalCommentSheet');
-            const closeBtn = document.getElementById('globalCloseBtn');
-            const postBtn = document.getElementById('globalPostBtn');
-            const inputBox = document.getElementById('globalCommentInput');
-            const commentsList = document.getElementById('globalCommentsList');
-
-            closeBtn.addEventListener('click', () => sheet.classList.remove('open'));
+            document.getElementById('globalCloseBtn').addEventListener('click', () => sheet.classList.remove('open'));
 
             const submitComment = () => {
+                const inputBox = document.getElementById('globalCommentInput');
                 const commentText = inputBox.value.trim();
                 if (commentText === '' || currentReelId === null) return;
 
+                const commentsList = document.getElementById('globalCommentsList');
                 const noCommentsText = commentsList.querySelector('.no-comments');
                 if (noCommentsText) noCommentsText.remove();
 
-                // Append New Comment visually
                 const newComment = document.createElement('div');
                 newComment.className = 'comment-item';
                 newComment.innerHTML = `<span class="comment-user">@you</span><span class="comment-text">${commentText}</span>`;
                 commentsList.appendChild(newComment);
 
-                // Save to LocalStorage
                 currentCommentsArray.push({ username: 'you', text: commentText });
                 localStorage.setItem(`comments_${currentReelId}`, JSON.stringify(currentCommentsArray));
 
@@ -384,15 +513,27 @@
                 commentsList.scrollTop = commentsList.scrollHeight;
             };
 
-            postBtn.addEventListener('click', submitComment);
-            inputBox.addEventListener('keypress', (e) => {
+            document.getElementById('globalPostBtn').addEventListener('click', submitComment);
+            document.getElementById('globalCommentInput').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') submitComment();
             });
         }
 
+        // Setup Profile View Panel Close Handler
+        function setupGlobalProfileView() {
+            document.getElementById('profileCloseBtn').addEventListener('click', () => {
+                document.getElementById('globalProfileView').classList.remove('open');
+                // Active video ko automatic play karne ke liye controller trigger karega
+                const activeVideo = document.querySelector('.reels-container').querySelector('.reel-card video');
+                if(activeVideo) activeVideo.play().catch(e => console.log(e));
+            });
+        }
+
+        // Core App Controller Logic
         function setupReelController() {
             const videos = document.querySelectorAll('.reel-video');
-            const sheet = document.getElementById('globalCommentSheet');
+            const commentSheet = document.getElementById('globalCommentSheet');
+            const profileSheet = document.getElementById('globalProfileView');
 
             const unmuteAll = () => {
                 videos.forEach(v => v.muted = false);
@@ -402,21 +543,18 @@
             document.addEventListener('click', unmuteAll);
             document.addEventListener('touchstart', unmuteAll);
 
-            const observerOptions = {
-                root: container,
-                threshold: 0.6
-            };
-
+            const observerOptions = { root: container, threshold: 0.6 };
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     const video = entry.target;
-
                     if (entry.isIntersecting) {
-                        video.play().catch(err => console.log("Autoplay waiting"));
+                        // Agar koi panel nahi khula tabhi video auto-play ho
+                        if(!profileSheet.classList.contains('open')) {
+                            video.play().catch(err => console.log("Autoplay waiting"));
+                        }
                     } else {
                         video.pause();
-                        // Scroll hote hi sheet niche chali jayegi aur automatic band ho jayegi 📴
-                        sheet.classList.remove('open');
+                        commentSheet.classList.remove('open');
                     }
                 });
             }, observerOptions);
