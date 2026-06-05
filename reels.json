@@ -6,6 +6,13 @@
     "username": "jay_kumar",
     "profile_pic": "https://picsum.photos/id/1025/50/50",
     "caption": "Amazing day coding this app! 💻🔥 #development",
+    "follow_status": "Follow",
+    "bio": "Web Developer & Creator 👨‍💻",
+    "posts": [
+      "https://picsum.photos/id/10/200/200",
+      "https://picsum.photos/id/20/200/200",
+      "https://picsum.photos/id/30/200/200"
+    ],
     "comments": [
       {"username": "amit_99", "text": "Bhai kya mast app banayi hai! 🙌"},
       {"username": "sara_codes", "text": "Double tap feature is awesome ❤️"}
@@ -18,6 +25,12 @@
     "username": "nature_lover",
     "profile_pic": "https://picsum.photos/id/1012/50/50",
     "caption": "Beautiful wild nature 🐻🌊 #explore",
+    "follow_status": "Follow",
+    "bio": "Nature Photographer 🌍📸",
+    "posts": [
+      "https://picsum.photos/id/40/200/200",
+      "https://picsum.photos/id/50/200/200"
+    ],
     "comments": [
       {"username": "travel_guru", "text": "Wow, what a view! 🗺️"}
     ]
