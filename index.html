@@ -99,13 +99,11 @@
             border: 2px solid #fff;
             object-fit: cover;
             cursor: pointer;
-            pointer-events: auto;
         }
         .username {
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            pointer-events: auto;
         }
 
         /* Follow Button Style 👥 */
@@ -281,12 +279,36 @@
             object-fit: cover;
             background: #222;
         }
+
+        /* Custom Toast Notification Style 🍞 */
+        .toast {
+            position: fixed;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%) scale(0.9);
+            background: rgba(26, 26, 26, 0.95);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 14px;
+            z-index: 300;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border: 1px solid #333;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+        }
     </style>
 </head>
 <body>
 
     <div class="reels-container" id="reelsContainer"></div>
 
+    <!-- Global Comment Sheet -->
     <div class="comment-sheet" id="globalCommentSheet">
         <div class="sheet-header">
             <h3>Comments</h3>
@@ -299,6 +321,7 @@
         </div>
     </div>
 
+    <!-- Global Full Screen Profile View Panel 👤 -->
     <div class="profile-view" id="globalProfileView">
         <div class="profile-header-area">
             <span class="profile-view-username" id="pViewUsername">@username</span>
@@ -313,12 +336,27 @@
         <div class="posts-grid" id="pViewGrid"></div>
     </div>
 
+    <!-- Toast Notification Element 🍞 -->
+    <div class="toast" id="toastBox">Link copied to clipboard! 🔗</div>
+
     <script>
         const jsonUrl = 'https://jaykumarsonkar28-ux.github.io/trendreels-backend/reels.json?v=' + new Date().getTime();
         const container = document.getElementById('reelsContainer');
         
+        // Global States
         let currentReelId = null;
         let currentCommentsArray = [];
+        let currentPlayingVideo = null; // Smart tracking video 🎯
+
+        // Dynamic Toast Function
+        function showToast(message) {
+            const toast = document.getElementById('toastBox');
+            toast.innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2500);
+        }
 
         async function loadReels() {
             try {
@@ -332,7 +370,6 @@
                     let isLiked = localStorage.getItem(`like_${reel.id}`) === 'true';
                     let likeIcon = isLiked ? '❤️' : '🤍';
 
-                    // LocalStorage se follow status check karna 👥
                     let savedFollow = localStorage.getItem(`follow_${reel.username}`);
                     let currentFollowText = savedFollow ? savedFollow : (reel.follow_status || 'Follow');
                     let followClass = currentFollowText === 'Following' ? 'follow-btn following' : 'follow-btn';
@@ -395,7 +432,7 @@
             };
             likeBtn.addEventListener('click', () => triggerLike());
 
-            // Follow Button Toggle Logic 👥
+            // Follow Logic
             followBtn.addEventListener('click', () => {
                 if (followBtn.innerText === 'Follow') {
                     followBtn.innerText = 'Following';
@@ -408,7 +445,7 @@
                 }
             });
 
-            // Share Button Action (Native Phone Menu) 🔗
+            // Share Logic with Native and Toast fallback 🍞
             shareBtn.addEventListener('click', async () => {
                 if (navigator.share) {
                     try {
@@ -421,19 +458,17 @@
                         console.log("Share cancelled");
                     }
                 } else {
-                    // Fallback agar API support na kare
                     navigator.clipboard.writeText(reel.video_url);
-                    alert("Video link copied to clipboard! 🔗");
+                    showToast("Video link copied to clipboard! 🔗");
                 }
             });
 
-            // Open Profile Sheet Click Events 👤
+            // Profile View Panel Logic 👤
             const openProfile = () => {
                 document.getElementById('pViewUsername').innerText = `@${reel.username}`;
                 document.getElementById('pViewPic').src = reel.profile_pic || 'https://via.placeholder.com/80';
                 document.getElementById('pViewBio').innerText = reel.bio || 'No bio available';
                 
-                // Grid Images Rendering
                 const gridContainer = document.getElementById('pViewGrid');
                 gridContainer.innerHTML = '';
                 if (reel.posts && reel.posts.length > 0) {
@@ -447,15 +482,14 @@
                     gridContainer.innerHTML = '<p style="color:#777; grid-column: span 3; text-align:center;">No posts yet</p>';
                 }
 
-                // Video pause handle
-                video.pause();
+                if (currentPlayingVideo) currentPlayingVideo.pause();
                 document.getElementById('globalProfileView').classList.add('open');
             };
 
             profilePic.addEventListener('click', openProfile);
             usernameText.addEventListener('click', openProfile);
 
-            // Tap Manager (Play/Pause vs Double Tap)
+            // Tap Manager
             let tapTimer = null;
             video.addEventListener('click', () => {
                 if (!tapTimer) {
@@ -477,7 +511,6 @@
             });
         }
 
-        // Global Comments Box Management
         function renderGlobalComments() {
             const listContainer = document.getElementById('globalCommentsList');
             let commentsHTML = '';
@@ -519,17 +552,18 @@
             });
         }
 
-        // Setup Profile View Panel Close Handler
+        // Fixed Profile Close Handler 🎯
         function setupGlobalProfileView() {
             document.getElementById('profileCloseBtn').addEventListener('click', () => {
                 document.getElementById('globalProfileView').classList.remove('open');
-                // Active video ko automatic play karne ke liye controller trigger karega
-                const activeVideo = document.querySelector('.reels-container').querySelector('.reel-card video');
-                if(activeVideo) activeVideo.play().catch(e => console.log(e));
+                // Smart play back the tracked video
+                if (currentPlayingVideo) {
+                    currentPlayingVideo.play().catch(e => console.log(e));
+                }
             });
         }
 
-        // Core App Controller Logic
+        // Intersection Observer logic
         function setupReelController() {
             const videos = document.querySelectorAll('.reel-video');
             const commentSheet = document.getElementById('globalCommentSheet');
@@ -548,8 +582,8 @@
                 entries.forEach(entry => {
                     const video = entry.target;
                     if (entry.isIntersecting) {
-                        // Agar koi panel nahi khula tabhi video auto-play ho
-                        if(!profileSheet.classList.contains('open')) {
+                        currentPlayingVideo = video; // Track current intersecting video 🎯
+                        if (!profileSheet.classList.contains('open')) {
                             video.play().catch(err => console.log("Autoplay waiting"));
                         }
                     } else {
