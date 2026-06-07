@@ -24,6 +24,7 @@
             overflow-y: scroll;
             scroll-snap-type: y mandatory;
             scrollbar-width: none;
+            padding-bottom: 60px; /* Space for Bottom Nav */
         }
         .reels-container::-webkit-scrollbar {
             display: none;
@@ -50,7 +51,7 @@
         .reels-buttons {
             position: absolute;
             right: 15px;
-            bottom: 120px;
+            bottom: 140px; /* Bottom Nav ke thoda upar */
             display: flex;
             flex-direction: column;
             gap: 20px;
@@ -80,19 +81,18 @@
         /* Profile aur Caption Overlay 💬 */
         .reel-overlay {
             position: absolute;
-            bottom: 30px;
+            bottom: 80px; /* Nav bar ke upar clear dikhe */
             left: 15px;
             right: 80px;
             z-index: 10;
             text-shadow: 1px 1px 5px rgba(0,0,0,0.8);
-            pointer-events: none; /* Clicks bypass hokar seedhe video par lagenge */
         }
         .profile-section {
             display: flex;
             align-items: center;
             gap: 10px;
             margin-bottom: 10px;
-            pointer-events: auto; /* Buttons aur profile links par click click allow karein */
+            pointer-events: auto;
         }
         .profile-pic {
             width: 35px;
@@ -280,7 +280,7 @@
         /* Custom Toast Notification Style 🍞 */
         .toast {
             position: fixed;
-            bottom: 50px;
+            bottom: 80px; /* Nav bar ke upar */
             left: 50%;
             transform: translateX(-50%) scale(0.9);
             background: rgba(26, 26, 26, 0.95);
@@ -298,6 +298,36 @@
         .toast.show {
             opacity: 1;
             transform: translateX(-50%) scale(1);
+        }
+
+        /* Bottom Navigation Bar Styles 🗺️ */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: #000;
+            border-top: 1px solid #262626;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 250; /* Profile view ke upar taaki click ho sake */
+        }
+        .nav-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+        .nav-btn.active {
+            opacity: 1;
+        }
+        .nav-btn:active {
+            transform: scale(0.9);
         }
     </style>
 </head>
@@ -333,16 +363,20 @@
 
     <div class="toast" id="toastBox">Link copied to clipboard! 🔗</div>
 
+    <div class="bottom-nav">
+        <button class="nav-btn active" id="navHome">🏠</button>
+        <button class="nav-btn" id="navSearch">🔍</button>
+        <button class="nav-btn" id="navProfile">👤</button>
+    </div>
+
     <script>
         const jsonUrl = 'https://jaykumarsonkar28-ux.github.io/trendreels-backend/reels.json?v=' + new Date().getTime();
         const container = document.getElementById('reelsContainer');
         
-        // Global State Variables
         let currentReelId = null;
         let currentCommentsArray = [];
-        let currentPlayingVideo = null; // Smart active video tracker 🎯
+        let currentPlayingVideo = null;
 
-        // Custom Dynamic Toast Handler
         function showToast(message) {
             const toast = document.getElementById('toastBox');
             toast.innerText = message;
@@ -360,7 +394,7 @@
                 for (const reel of data) {
                     const card = document.createElement('div');
                     card.className = 'reel-card';
-                    card.dataset.id = reel.id; // Identifier store karne ke liye
+                    card.dataset.id = reel.id;
                     
                     let isLiked = localStorage.getItem(`like_${reel.id}`) === 'true';
                     let likeIcon = isLiked ? '❤️' : '🤍';
@@ -396,6 +430,7 @@
                 setupReelController();
                 setupGlobalCommentSheet();
                 setupGlobalProfileView();
+                setupBottomNavigation();
 
             } catch (error) {
                 console.error('Reels load karne mein dikkat aayi:', error);
@@ -412,10 +447,9 @@
             const profilePic = card.querySelector('.profile-pic');
             const usernameText = card.querySelector('.username');
 
-            // 1. Like Button Configuration
             const triggerLike = (forceLike = false) => {
                 let currentlyLiked = likeBtn.innerText === '❤️';
-                if (forceLike) currentlyLiked = false; // Double tap par hamesha clean like chalega
+                if (forceLike) currentlyLiked = false;
 
                 if (!currentlyLiked) {
                     likeBtn.innerText = '❤️';
@@ -427,7 +461,6 @@
             };
             likeBtn.addEventListener('click', () => triggerLike());
 
-            // 2. Follow Button Storage Configuration
             followBtn.addEventListener('click', () => {
                 if (followBtn.innerText === 'Follow') {
                     followBtn.innerText = 'Following';
@@ -440,7 +473,6 @@
                 }
             });
 
-            // 3. Share Menu Routing Strategy
             shareBtn.addEventListener('click', async () => {
                 if (navigator.share) {
                     try {
@@ -458,23 +490,14 @@
                 }
             });
 
-            // 4. Open Comments Panel Connector (Fixed Logic)
             commentBtn.addEventListener('click', () => {
                 currentReelId = reel.id;
-                
-                // Pehle check karein LocalStorage mein saved comments hain ya nahi
                 let savedComments = localStorage.getItem(`comments_${reel.id}`);
-                if (savedComments) {
-                    currentCommentsArray = JSON.parse(savedComments);
-                } else {
-                    currentCommentsArray = reel.comments || [];
-                }
-                
+                currentCommentsArray = savedComments ? JSON.parse(savedComments) : (reel.comments || []);
                 renderGlobalComments();
                 document.getElementById('globalCommentSheet').classList.add('open');
             });
 
-            // 5. Profile Panel Assembly Configurator
             const openProfile = () => {
                 document.getElementById('pViewUsername').innerText = `@${reel.username}`;
                 document.getElementById('pViewPic').src = reel.profile_pic || 'https://via.placeholder.com/80';
@@ -500,7 +523,6 @@
             profilePic.addEventListener('click', openProfile);
             usernameText.addEventListener('click', openProfile);
 
-            // 6. Interactive Tap Gesture Scheduler
             let tapTimer = null;
             video.addEventListener('click', () => {
                 if (!tapTimer) {
@@ -522,22 +544,16 @@
             });
         }
 
-        // Global Comments Renderer
         function renderGlobalComments() {
             const listContainer = document.getElementById('globalCommentsList');
             let commentsHTML = '';
             currentCommentsArray.forEach(c => {
-                commentsHTML += `
-                    <div class="comment-item">
-                        <span class="comment-user">@${c.username}</span>
-                        <span class="comment-text">${c.text}</span>
-                    </div>`;
+                commentsHTML += `<div class="comment-item"><span class="comment-user">@${c.username}</span><span class="comment-text">${c.text}</span></div>`;
             });
             listContainer.innerHTML = commentsHTML || '<p class="no-comments" style="color:#777;">No comments yet</p>';
             listContainer.scrollTop = listContainer.scrollHeight;
         }
 
-        // Setup Global Comments Core Logic
         function setupGlobalCommentSheet() {
             const sheet = document.getElementById('globalCommentSheet');
             document.getElementById('globalCloseBtn').addEventListener('click', () => sheet.classList.remove('open'));
@@ -556,7 +572,6 @@
                 newComment.innerHTML = `<span class="comment-user">@you</span><span class="comment-text">${commentText}</span>`;
                 commentsList.appendChild(newComment);
 
-                // State update aur local storage mapping
                 currentCommentsArray.push({ username: 'you', text: commentText });
                 localStorage.setItem(`comments_${currentReelId}`, JSON.stringify(currentCommentsArray));
 
@@ -570,24 +585,48 @@
             });
         }
 
-        // Complete Fixed Profile Close Handler 🎯
         function setupGlobalProfileView() {
             document.getElementById('profileCloseBtn').addEventListener('click', () => {
                 document.getElementById('globalProfileView').classList.remove('open');
-                // Jo video active screen par thi use dobara automatic resume karenge
                 if (currentPlayingVideo) {
                     currentPlayingVideo.play().catch(e => console.log(e));
                 }
             });
         }
 
-        // Master App Controller Optimization Rigs
+        // Bottom Navigation Interaction Logic 🗺 Implemented
+        function setupBottomNavigation() {
+            const homeBtn = document.getElementById('navHome');
+            const searchBtn = document.getElementById('navSearch');
+            const profileBtn = document.getElementById('navProfile');
+
+            homeBtn.addEventListener('click', () => {
+                setActiveNav(homeBtn);
+                container.scrollTo({ top: 0, behavior: 'smooth' });
+                showToast("Back to Home Feed 🏠");
+            });
+
+            searchBtn.addEventListener('click', () => {
+                setActiveNav(searchBtn);
+                showToast("Search feature coming soon! 🔍");
+            });
+
+            profileBtn.addEventListener('click', () => {
+                setActiveNav(profileBtn);
+                showToast("Your Personal Profile coming soon! 👤");
+            });
+        }
+
+        function setActiveNav(activeButton) {
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            activeButton.classList.add('active');
+        }
+
         function setupReelController() {
             const videos = document.querySelectorAll('.reel-video');
             const commentSheet = document.getElementById('globalCommentSheet');
             const profileSheet = document.getElementById('globalProfileView');
 
-            // Global Touch/Click Unmuting Strategy
             const unmuteAll = () => {
                 videos.forEach(v => v.muted = false);
                 document.removeEventListener('click', unmuteAll);
@@ -596,19 +635,18 @@
             document.addEventListener('click', unmuteAll);
             document.addEventListener('touchstart', unmuteAll);
 
-            // Intersection Observer Optimization
             const observerOptions = { root: container, threshold: 0.6 };
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     const video = entry.target;
                     if (entry.isIntersecting) {
-                        currentPlayingVideo = video; // Current playing track update kiya 🎯
+                        currentPlayingVideo = video;
                         if (!profileSheet.classList.contains('open')) {
                             video.play().catch(err => console.log("Autoplay waiting"));
                         }
                     } else {
                         video.pause();
-                        commentSheet.classList.remove('open'); // Swipe par comment sheet close sync
+                        commentSheet.classList.remove('open');
                     }
                 });
             }, observerOptions);
