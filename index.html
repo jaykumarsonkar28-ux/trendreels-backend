@@ -263,7 +263,7 @@
             color: #ccc;
         }
 
-        /* Naya Personal Profile Screen Style 👤 */
+        /* Personal Profile Screen Style 👤 */
         .my-profile-container {
             width: 100%;
             height: 100vh;
@@ -287,6 +287,27 @@
         .stat-item txt {
             font-size: 12px;
             color: #aaa;
+        }
+
+        /* Nayi Search View Container Style 🔍 */
+        .search-view-container {
+            width: 100%;
+            height: 100vh;
+            background: #000;
+            padding: 20px;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+        .search-bar-box {
+            width: 100%;
+            background: #262626;
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            padding: 10px 15px;
+            font-size: 16px;
+            outline: none;
+            margin-bottom: 20px;
         }
         
         /* 3-Column Grid Post System 📊 */
@@ -360,6 +381,23 @@
 <body>
 
     <div class="reels-container" id="reelsContainer"></div>
+
+    <div class="search-view-container" id="searchView" style="display: none;">
+        <input type="text" class="search-bar-box" placeholder="🔍 Search creators or topics...">
+        <div style="font-weight: bold; margin-bottom: 10px;">Explore</div>
+        
+        <div class="posts-grid">
+            <img class="grid-post-img" src="https://picsum.photos/id/11/200/200" alt="explore">
+            <img class="grid-post-img" src="https://picsum.photos/id/12/200/200" alt="explore">
+            <img class="grid-post-img" src="https://picsum.photos/id/13/200/200" alt="explore">
+            <img class="grid-post-img" src="https://picsum.photos/id/14/200/200" alt="explore">
+            <img class="grid-post-img" src="https://picsum.photos/id/15/200/200" alt="explore">
+            <img class="grid-post-img" src="https://picsum.photos/id/16/200/200" alt="explore">
+            <img class="grid-post-img" src="https://picsum.photos/id/17/200/200" alt="explore">
+            <img class="grid-post-img" src="https://picsum.photos/id/18/200/200" alt="explore">
+            <img class="grid-post-img" src="https://picsum.photos/id/19/200/200" alt="explore">
+        </div>
+    </div>
 
     <div class="my-profile-container" id="myProfileView" style="display: none;">
         <div style="font-size: 20px; font-weight: bold; margin-bottom: 20px;">@my_username</div>
@@ -656,7 +694,7 @@
             });
         }
 
-        // Updated Smart Bottom Navigation Integration 🗺️
+        // Updated 3-Way Switching Bottom Navigation 🗺️
         function setupBottomNavigation() {
             const homeBtn = document.getElementById('navHome');
             const searchBtn = document.getElementById('navSearch');
@@ -664,34 +702,30 @@
 
             const reelsCont = document.getElementById('reelsContainer');
             const myProfileCont = document.getElementById('myProfileView');
+            const searchViewCont = document.getElementById('searchView');
 
             homeBtn.addEventListener('click', () => {
                 setActiveNav(homeBtn);
-                
-                // Show Reels, Hide Personal Profile 🔄
                 reelsCont.style.display = 'block';
                 myProfileCont.style.display = 'none';
-                
-                if (currentPlayingVideo) {
-                    currentPlayingVideo.play().catch(e => console.log(e));
-                }
+                searchViewCont.style.display = 'none';
+                if (currentPlayingVideo) currentPlayingVideo.play().catch(e => console.log(e));
             });
 
             searchBtn.addEventListener('click', () => {
                 setActiveNav(searchBtn);
-                showToast("Search feature coming soon! 🔍");
+                reelsCont.style.display = 'none';
+                myProfileCont.style.display = 'none';
+                searchViewCont.style.display = 'block';
+                if (currentPlayingVideo) currentPlayingVideo.pause();
             });
 
             profileBtn.addEventListener('click', () => {
                 setActiveNav(profileBtn);
-                
-                // Hide Reels, Show Personal Profile 🔄
                 reelsCont.style.display = 'none';
                 myProfileCont.style.display = 'block';
-                
-                if (currentPlayingVideo) {
-                    currentPlayingVideo.pause();
-                }
+                searchViewCont.style.display = 'none';
+                if (currentPlayingVideo) currentPlayingVideo.pause();
             });
         }
 
@@ -705,6 +739,7 @@
             const commentSheet = document.getElementById('globalCommentSheet');
             const profileSheet = document.getElementById('globalProfileView');
             const myProfileCont = document.getElementById('myProfileView');
+            const searchViewCont = document.getElementById('searchView');
 
             const unmuteAll = () => {
                 videos.forEach(v => v.muted = false);
@@ -721,7 +756,7 @@
                     if (entry.isIntersecting) {
                         currentPlayingVideo = video;
                         // Video tab active hone par hi auto-play chale
-                        if (!profileSheet.classList.contains('open') && myProfileCont.style.display !== 'block') {
+                        if (!profileSheet.classList.contains('open') && myProfileCont.style.display !== 'block' && searchViewCont.style.display !== 'block') {
                             video.play().catch(err => console.log("Autoplay waiting"));
                         }
                     } else {
