@@ -24,7 +24,7 @@
             overflow-y: scroll;
             scroll-snap-type: y mandatory;
             scrollbar-width: none;
-            padding-bottom: 60px; /* Space for Bottom Nav */
+            padding-bottom: 60px;
         }
         .reels-container::-webkit-scrollbar {
             display: none;
@@ -51,7 +51,7 @@
         .reels-buttons {
             position: absolute;
             right: 15px;
-            bottom: 140px; /* Bottom Nav ke thoda upar */
+            bottom: 140px;
             display: flex;
             flex-direction: column;
             gap: 20px;
@@ -81,7 +81,7 @@
         /* Profile aur Caption Overlay 💬 */
         .reel-overlay {
             position: absolute;
-            bottom: 80px; /* Nav bar ke upar clear dikhe */
+            bottom: 80px;
             left: 15px;
             right: 80px;
             z-index: 10;
@@ -226,7 +226,7 @@
             cursor: pointer;
         }
 
-        /* Full Screen Profile View Layout 👤 */
+        /* Creator Profile View Layout 👤 */
         .profile-view {
             position: fixed;
             top: 100vh;
@@ -262,6 +262,32 @@
             font-size: 14px;
             color: #ccc;
         }
+
+        /* Naya Personal Profile Screen Style 👤 */
+        .my-profile-container {
+            width: 100%;
+            height: 100vh;
+            background: #000;
+            padding: 20px;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+        .stats-row {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .stat-item num {
+            font-size: 18px;
+            font-weight: bold;
+            display: block;
+        }
+        .stat-item txt {
+            font-size: 12px;
+            color: #aaa;
+        }
         
         /* 3-Column Grid Post System 📊 */
         .posts-grid {
@@ -280,7 +306,7 @@
         /* Custom Toast Notification Style 🍞 */
         .toast {
             position: fixed;
-            bottom: 80px; /* Nav bar ke upar */
+            bottom: 80px;
             left: 50%;
             transform: translateX(-50%) scale(0.9);
             background: rgba(26, 26, 26, 0.95);
@@ -312,7 +338,7 @@
             display: flex;
             justify-content: space-around;
             align-items: center;
-            z-index: 250; /* Profile view ke upar taaki click ho sake */
+            z-index: 250;
         }
         .nav-btn {
             background: none;
@@ -334,6 +360,42 @@
 <body>
 
     <div class="reels-container" id="reelsContainer"></div>
+
+    <div class="my-profile-container" id="myProfileView" style="display: none;">
+        <div style="font-size: 20px; font-weight: bold; margin-bottom: 20px;">@my_username</div>
+        
+        <div style="display: flex; align-items: center; gap: 30px;">
+            <img src="https://picsum.photos/id/1025/80/80" alt="my profile" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
+            <div style="flex: 1;">
+                <div class="stats-row">
+                    <div class="stat-item"><num>15</num><txt>Posts</txt></div>
+                    <div class="stat-item"><num>150</num><txt>Followers</txt></div>
+                    <div class="stat-item"><num>180</num><txt>Following</txt></div>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 15px; font-size: 14px;">
+            <div style="font-weight: bold;">Jay Kumar Sonkar</div>
+            <div style="color: #aaa; margin-top: 5px;">Building the future of TrendReels 🚀👨‍💻</div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button style="flex: 1; background: #262626; color: #fff; border: none; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 14px;">Edit Profile</button>
+            <button style="flex: 1; background: #262626; color: #fff; border: none; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 14px;">Share Profile</button>
+        </div>
+
+        <hr style="border-color: #262626; margin-top: 20px; margin-bottom: 10px;">
+        <div style="font-weight: bold; margin-bottom: 10px;">My Grid Posts</div>
+        
+        <div class="posts-grid">
+            <img class="grid-post-img" src="https://picsum.photos/id/101/200/200" alt="post">
+            <img class="grid-post-img" src="https://picsum.photos/id/102/200/200" alt="post">
+            <img class="grid-post-img" src="https://picsum.photos/id/103/200/200" alt="post">
+            <img class="grid-post-img" src="https://picsum.photos/id/104/200/200" alt="post">
+            <img class="grid-post-img" src="https://picsum.photos/id/106/200/200" alt="post">
+        </div>
+    </div>
 
     <div class="comment-sheet" id="globalCommentSheet">
         <div class="sheet-header">
@@ -594,16 +656,25 @@
             });
         }
 
-        // Bottom Navigation Interaction Logic 🗺 Implemented
+        // Updated Smart Bottom Navigation Integration 🗺️
         function setupBottomNavigation() {
             const homeBtn = document.getElementById('navHome');
             const searchBtn = document.getElementById('navSearch');
             const profileBtn = document.getElementById('navProfile');
 
+            const reelsCont = document.getElementById('reelsContainer');
+            const myProfileCont = document.getElementById('myProfileView');
+
             homeBtn.addEventListener('click', () => {
                 setActiveNav(homeBtn);
-                container.scrollTo({ top: 0, behavior: 'smooth' });
-                showToast("Back to Home Feed 🏠");
+                
+                // Show Reels, Hide Personal Profile 🔄
+                reelsCont.style.display = 'block';
+                myProfileCont.style.display = 'none';
+                
+                if (currentPlayingVideo) {
+                    currentPlayingVideo.play().catch(e => console.log(e));
+                }
             });
 
             searchBtn.addEventListener('click', () => {
@@ -613,7 +684,14 @@
 
             profileBtn.addEventListener('click', () => {
                 setActiveNav(profileBtn);
-                showToast("Your Personal Profile coming soon! 👤");
+                
+                // Hide Reels, Show Personal Profile 🔄
+                reelsCont.style.display = 'none';
+                myProfileCont.style.display = 'block';
+                
+                if (currentPlayingVideo) {
+                    currentPlayingVideo.pause();
+                }
             });
         }
 
@@ -626,6 +704,7 @@
             const videos = document.querySelectorAll('.reel-video');
             const commentSheet = document.getElementById('globalCommentSheet');
             const profileSheet = document.getElementById('globalProfileView');
+            const myProfileCont = document.getElementById('myProfileView');
 
             const unmuteAll = () => {
                 videos.forEach(v => v.muted = false);
@@ -641,7 +720,8 @@
                     const video = entry.target;
                     if (entry.isIntersecting) {
                         currentPlayingVideo = video;
-                        if (!profileSheet.classList.contains('open')) {
+                        // Video tab active hone par hi auto-play chale
+                        if (!profileSheet.classList.contains('open') && myProfileCont.style.display !== 'block') {
                             video.play().catch(err => console.log("Autoplay waiting"));
                         }
                     } else {
