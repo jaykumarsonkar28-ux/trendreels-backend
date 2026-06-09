@@ -325,7 +325,7 @@
             background: #222;
         }
 
-        /* Nayi Edit Profile Form Design 📝 */
+        /* Edit Profile Form Design 📝 */
         .edit-profile-panel {
             position: fixed;
             top: 0;
@@ -385,7 +385,7 @@
             transform: translateX(-50%) scale(1);
         }
 
-        /* Bottom Navigation Bar Styles 🗺️ (Fixed Space System Navigation) */
+        /* Bottom Navigation Bar Styles 🗺️ (Safe Zone System) */
         .bottom-nav {
             position: fixed;
             bottom: 15px; 
@@ -597,7 +597,8 @@
                 setupGlobalCommentSheet();
                 setupGlobalProfileView();
                 setupBottomNavigation();
-                setupEditProfileSystem(); // Naya system setup trigger
+                setupEditProfileSystem();
+                loadProfileData(); // Permanent saved data load karne ke liye function call 🔄
 
             } catch (error) {
                 console.error('Reels load karne mein dikkat aayi:', error);
@@ -762,38 +763,50 @@
             });
         }
 
-        // Edit Profile Form Operations Core Logic 📝
+        // permanent memory se data load karne ka naya function 📥
+        function loadProfileData() {
+            let savedName = localStorage.getItem('profileName');
+            if (savedName) {
+                document.getElementById('myFullNameDisplay').innerText = savedName;
+            }
+
+            let savedUsername = localStorage.getItem('profileUsername');
+            if (savedUsername) {
+                document.getElementById('myUsernameHeader').innerText = `@${savedUsername}`;
+            }
+
+            let savedBio = localStorage.getItem('profileBio');
+            if (savedBio) {
+                document.getElementById('myBioDisplay').innerText = savedBio;
+            }
+        }
+
+        // Edit Profile Form Setup Logic 📝
         function setupEditProfileSystem() {
             const panel = document.getElementById('editProfileView');
             const triggerBtn = document.getElementById('myEditProfileTrigger');
             const cancelBtn = document.getElementById('cancelEditFormBtn');
             const saveBtn = document.getElementById('saveEditFormBtn');
 
-            // Profile view references
             const headerUsername = document.getElementById('myUsernameHeader');
             const displayFullName = document.getElementById('myFullNameDisplay');
             const displayBio = document.getElementById('myBioDisplay');
 
-            // Form element inputs
             const nameInput = document.getElementById('inputEditName');
             const usernameInput = document.getElementById('inputEditUsername');
             const bioInput = document.getElementById('inputEditBio');
 
-            // Trigger click - panel ko block karein aur text feed karein
             triggerBtn.addEventListener('click', () => {
                 nameInput.value = displayFullName.innerText;
                 usernameInput.value = headerUsername.innerText.replace('@', '');
                 bioInput.value = displayBio.innerText;
-                
                 panel.style.display = 'block';
             });
 
-            // Cancel click - panel ko close none karein
             cancelBtn.addEventListener('click', () => {
                 panel.style.display = 'none';
             });
 
-            // Save Click (Done) - Text update aur close panel none
             saveBtn.addEventListener('click', () => {
                 const filledName = nameInput.value.trim();
                 const filledUsername = usernameInput.value.trim();
@@ -802,6 +815,11 @@
                 if (filledName !== "") displayFullName.innerText = filledName;
                 if (filledUsername !== "") headerUsername.innerText = `@${filledUsername}`;
                 displayBio.innerText = filledBio;
+
+                // 💾 Data ko permanent phone memory mein save karne ke liye
+                localStorage.setItem('profileName', filledName);
+                localStorage.setItem('profileUsername', filledUsername);
+                localStorage.setItem('profileBio', filledBio);
 
                 panel.style.display = 'none';
                 showToast("Profile updated! ✨");
@@ -824,7 +842,7 @@
                 profileCont.style.display = 'none';
                 document.getElementById('globalCommentSheet').classList.remove('open');
                 document.getElementById('globalProfileView').classList.remove('open');
-                document.getElementById('editProfileView').style.display = 'none'; // Edit panel backup safe close
+                document.getElementById('editProfileView').style.display = 'none';
             }
 
             homeBtn.addEventListener('click', () => {
