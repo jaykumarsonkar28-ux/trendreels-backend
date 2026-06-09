@@ -9,7 +9,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-        }9
+        }
         body {
             background-color: #000;
             font-family: Arial, sans-serif;
@@ -24,7 +24,7 @@
             overflow-y: scroll;
             scroll-snap-type: y mandatory;
             scrollbar-width: none;
-            padding-bottom: 60px;
+            padding-bottom: 60px; /* Navigation bar ke liye space */
         }
         .reels-container::-webkit-scrollbar {
             display: none;
@@ -51,7 +51,7 @@
         .reels-buttons {
             position: absolute;
             right: 15px;
-            bottom: 140px;
+            bottom: 140px; /* Bottom Nav se upar rakhne ke liye */
             display: flex;
             flex-direction: column;
             gap: 20px;
@@ -81,11 +81,12 @@
         /* Profile aur Caption Overlay 💬 */
         .reel-overlay {
             position: absolute;
-            bottom: 80px;
+            bottom: 80px; /* Bottom Nav ke thik upar clean gap */
             left: 15px;
             right: 80px;
             z-index: 10;
             text-shadow: 1px 1px 5px rgba(0,0,0,0.8);
+            pointer-events: none;
         }
         .profile-section {
             display: flex;
@@ -289,7 +290,7 @@
             color: #aaa;
         }
 
-        /* Nayi Search View Container Style 🔍 */
+        /* Search View Container Style 🔍 */
         .search-view-container {
             width: 100%;
             height: 100vh;
@@ -350,7 +351,7 @@
         /* Bottom Navigation Bar Styles 🗺️ */
         .bottom-nav {
             position: fixed;
-            bottom: 60px;/* Safe zone banane ke liye upar uthaya */
+            bottom: 0; /* Sticky at the very bottom */
             left: 0;
             width: 100%;
             height: 60px;
@@ -473,9 +474,10 @@
         const jsonUrl = 'https://jaykumarsonkar28-ux.github.io/trendreels-backend/reels.json?v=' + new Date().getTime();
         const container = document.getElementById('reelsContainer');
         
+        // Global States Architecture
         let currentReelId = null;
         let currentCommentsArray = [];
-        let currentPlayingVideo = null;
+        let currentPlayingVideo = null; 
 
         function showToast(message) {
             const toast = document.getElementById('toastBox');
@@ -547,6 +549,7 @@
             const profilePic = card.querySelector('.profile-pic');
             const usernameText = card.querySelector('.username');
 
+            // Like System
             const triggerLike = (forceLike = false) => {
                 let currentlyLiked = likeBtn.innerText === '❤️';
                 if (forceLike) currentlyLiked = false;
@@ -561,6 +564,7 @@
             };
             likeBtn.addEventListener('click', () => triggerLike());
 
+            // Follow System
             followBtn.addEventListener('click', () => {
                 if (followBtn.innerText === 'Follow') {
                     followBtn.innerText = 'Following';
@@ -573,6 +577,7 @@
                 }
             });
 
+            // Share Fallback Strategy
             shareBtn.addEventListener('click', async () => {
                 if (navigator.share) {
                     try {
@@ -590,6 +595,7 @@
                 }
             });
 
+            // Comment Sheet Trigger Setup
             commentBtn.addEventListener('click', () => {
                 currentReelId = reel.id;
                 let savedComments = localStorage.getItem(`comments_${reel.id}`);
@@ -598,6 +604,7 @@
                 document.getElementById('globalCommentSheet').classList.add('open');
             });
 
+            // Creator Profile Assembly Trigger (Fixed Cut-off)
             const openProfile = () => {
                 document.getElementById('pViewUsername').innerText = `@${reel.username}`;
                 document.getElementById('pViewPic').src = reel.profile_pic || 'https://via.placeholder.com/80';
@@ -605,6 +612,7 @@
                 
                 const gridContainer = document.getElementById('pViewGrid');
                 gridContainer.innerHTML = '';
+                
                 if (reel.posts && reel.posts.length > 0) {
                     reel.posts.forEach(postUrl => {
                         const img = document.createElement('img');
@@ -623,6 +631,7 @@
             profilePic.addEventListener('click', openProfile);
             usernameText.addEventListener('click', openProfile);
 
+            // Double Tap Handler System
             let tapTimer = null;
             video.addEventListener('click', () => {
                 if (!tapTimer) {
@@ -694,52 +703,55 @@
             });
         }
 
-        // Updated 3-Way Switching Bottom Navigation 🗺️
+        // Bottom Navigation Handler Core (Complete Logic Integrated) 🗺️
         function setupBottomNavigation() {
             const homeBtn = document.getElementById('navHome');
             const searchBtn = document.getElementById('navSearch');
             const profileBtn = document.getElementById('navProfile');
 
             const reelsCont = document.getElementById('reelsContainer');
-            const myProfileCont = document.getElementById('myProfileView');
-            const searchViewCont = document.getElementById('searchView');
+            const searchCont = document.getElementById('searchView');
+            const profileCont = document.getElementById('myProfileView');
+
+            function resetActiveTabs() {
+                document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+                reelsCont.style.display = 'none';
+                searchCont.style.display = 'none';
+                profileCont.style.display = 'none';
+                
+                // Saare global sheets tabs badalne par hide ho jayein
+                document.getElementById('globalCommentSheet').classList.remove('open');
+                document.getElementById('globalProfileView').classList.remove('open');
+            }
 
             homeBtn.addEventListener('click', () => {
-                setActiveNav(homeBtn);
+                resetActiveTabs();
+                homeBtn.classList.add('active');
                 reelsCont.style.display = 'block';
-                myProfileCont.style.display = 'none';
-                searchViewCont.style.display = 'none';
+                // Home tab par aate hi active video automatic dubara play ho jaye
                 if (currentPlayingVideo) currentPlayingVideo.play().catch(e => console.log(e));
             });
 
             searchBtn.addEventListener('click', () => {
-                setActiveNav(searchBtn);
-                reelsCont.style.display = 'none';
-                myProfileCont.style.display = 'none';
-                searchViewCont.style.display = 'block';
+                resetActiveTabs();
+                searchBtn.classList.add('active');
+                searchCont.style.display = 'block';
+                // Background video stop taaki aawaz na aaye
                 if (currentPlayingVideo) currentPlayingVideo.pause();
             });
 
             profileBtn.addEventListener('click', () => {
-                setActiveNav(profileBtn);
-                reelsCont.style.display = 'none';
-                myProfileCont.style.display = 'block';
-                searchViewCont.style.display = 'none';
+                resetActiveTabs();
+                profileBtn.classList.add('active');
+                profileCont.style.display = 'block';
                 if (currentPlayingVideo) currentPlayingVideo.pause();
             });
-        }
-
-        function setActiveNav(activeButton) {
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-            activeButton.classList.add('active');
         }
 
         function setupReelController() {
             const videos = document.querySelectorAll('.reel-video');
             const commentSheet = document.getElementById('globalCommentSheet');
             const profileSheet = document.getElementById('globalProfileView');
-            const myProfileCont = document.getElementById('myProfileView');
-            const searchViewCont = document.getElementById('searchView');
 
             const unmuteAll = () => {
                 videos.forEach(v => v.muted = false);
@@ -754,9 +766,9 @@
                 entries.forEach(entry => {
                     const video = entry.target;
                     if (entry.isIntersecting) {
-                        currentPlayingVideo = video;
-                        // Video tab active hone par hi auto-play chale
-                        if (!profileSheet.classList.contains('open') && myProfileCont.style.display !== 'block' && searchViewCont.style.display !== 'block') {
+                        currentPlayingVideo = video; 
+                        // Video tabhi auto-play ho jab user actual home stream screen par ho
+                        if (!profileSheet.classList.contains('open') && document.getElementById('reelsContainer').style.display !== 'none') {
                             video.play().catch(err => console.log("Autoplay waiting"));
                         }
                     } else {
