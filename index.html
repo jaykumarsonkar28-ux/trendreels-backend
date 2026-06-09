@@ -24,7 +24,7 @@
             overflow-y: scroll;
             scroll-snap-type: y mandatory;
             scrollbar-width: none;
-            padding-bottom: 60px; /* Navigation bar ke liye space */
+            padding-bottom: 60px;
         }
         .reels-container::-webkit-scrollbar {
             display: none;
@@ -51,7 +51,7 @@
         .reels-buttons {
             position: absolute;
             right: 15px;
-            bottom: 140px; /* Bottom Nav se upar rakhne ke liye */
+            bottom: 140px;
             display: flex;
             flex-direction: column;
             gap: 20px;
@@ -81,7 +81,7 @@
         /* Profile aur Caption Overlay 💬 */
         .reel-overlay {
             position: absolute;
-            bottom: 80px; /* Bottom Nav ke thik upar clean gap */
+            bottom: 80px;
             left: 15px;
             right: 80px;
             z-index: 10;
@@ -325,6 +325,43 @@
             background: #222;
         }
 
+        /* Nayi Edit Profile Form Design 📝 */
+        .edit-profile-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: #000;
+            z-index: 260;
+            padding: 20px;
+            display: none;
+            overflow-y: auto;
+        }
+        .form-group-item {
+            margin-bottom: 20px;
+        }
+        .form-group-item label {
+            display: block;
+            font-size: 14px;
+            color: #8e8e93;
+            margin-bottom: 6px;
+        }
+        .form-input-element {
+            width: 100%;
+            background: #1c1c1e;
+            border: 1px solid #3a3a3c;
+            border-radius: 8px;
+            color: #fff;
+            padding: 12px;
+            font-size: 16px;
+            outline: none;
+        }
+        textarea.form-input-element {
+            height: 90px;
+            resize: none;
+        }
+
         /* Custom Toast Notification Style 🍞 */
         .toast {
             position: fixed;
@@ -348,10 +385,10 @@
             transform: translateX(-50%) scale(1);
         }
 
-        /* Bottom Navigation Bar Styles 🗺️ */
+        /* Bottom Navigation Bar Styles 🗺️ (Fixed Space System Navigation) */
         .bottom-nav {
             position: fixed;
-            bottom: 0; /* Sticky at the very bottom */
+            bottom: 15px; 
             left: 0;
             width: 100%;
             height: 60px;
@@ -401,7 +438,7 @@
     </div>
 
     <div class="my-profile-container" id="myProfileView" style="display: none;">
-        <div style="font-size: 20px; font-weight: bold; margin-bottom: 20px;">@my_username</div>
+        <div style="font-size: 20px; font-weight: bold; margin-bottom: 20px;" id="myUsernameHeader">@my_username</div>
         
         <div style="display: flex; align-items: center; gap: 30px;">
             <img src="https://picsum.photos/id/1025/80/80" alt="my profile" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
@@ -415,12 +452,12 @@
         </div>
 
         <div style="margin-top: 15px; font-size: 14px;">
-            <div style="font-weight: bold;">Jay Kumar Sonkar</div>
-            <div style="color: #aaa; margin-top: 5px;">Building the future of TrendReels 🚀👨‍💻</div>
+            <div style="font-weight: bold;" id="myFullNameDisplay">Jay Kumar Sonkar</div>
+            <div style="color: #aaa; margin-top: 5px;" id="myBioDisplay">Building the future of TrendReels 🚀👨‍💻</div>
         </div>
 
         <div style="display: flex; gap: 10px; margin-top: 15px;">
-            <button style="flex: 1; background: #262626; color: #fff; border: none; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 14px;">Edit Profile</button>
+            <button id="myEditProfileTrigger" style="flex: 1; background: #262626; color: #fff; border: none; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 14px;">Edit Profile</button>
             <button style="flex: 1; background: #262626; color: #fff; border: none; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 14px;">Share Profile</button>
         </div>
 
@@ -433,6 +470,34 @@
             <img class="grid-post-img" src="https://picsum.photos/id/103/200/200" alt="post">
             <img class="grid-post-img" src="https://picsum.photos/id/104/200/200" alt="post">
             <img class="grid-post-img" src="https://picsum.photos/id/106/200/200" alt="post">
+        </div>
+    </div>
+
+    <div class="edit-profile-panel" id="editProfileView">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <button id="cancelEditFormBtn" style="background:none; border:none; color:#fff; font-size:16px; cursor:pointer;">Cancel</button>
+            <h3 style="font-size: 18px; font-weight: bold;">Edit Profile</h3>
+            <button id="saveEditFormBtn" style="background:none; border:none; color:#3897f0; font-size:16px; font-weight:bold; cursor:pointer;">Done</button>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 30px;">
+            <img src="https://picsum.photos/id/1025/80/80" style="width: 85px; height: 85px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; border: 1px solid #222;">
+            <div style="color: #3897f0; font-size: 14px; font-weight: bold; cursor: pointer;">Change profile photo</div>
+        </div>
+
+        <div class="form-group-item">
+            <label>Name</label>
+            <input type="text" id="inputEditName" class="form-input-element">
+        </div>
+
+        <div class="form-group-item">
+            <label>Username</label>
+            <input type="text" id="inputEditUsername" class="form-input-element">
+        </div>
+
+        <div class="form-group-item">
+            <label>Bio</label>
+            <textarea id="inputEditBio" class="form-input-element"></textarea>
         </div>
     </div>
 
@@ -474,7 +539,6 @@
         const jsonUrl = 'https://jaykumarsonkar28-ux.github.io/trendreels-backend/reels.json?v=' + new Date().getTime();
         const container = document.getElementById('reelsContainer');
         
-        // Global States Architecture
         let currentReelId = null;
         let currentCommentsArray = [];
         let currentPlayingVideo = null; 
@@ -533,6 +597,7 @@
                 setupGlobalCommentSheet();
                 setupGlobalProfileView();
                 setupBottomNavigation();
+                setupEditProfileSystem(); // Naya system setup trigger
 
             } catch (error) {
                 console.error('Reels load karne mein dikkat aayi:', error);
@@ -549,7 +614,6 @@
             const profilePic = card.querySelector('.profile-pic');
             const usernameText = card.querySelector('.username');
 
-            // Like System
             const triggerLike = (forceLike = false) => {
                 let currentlyLiked = likeBtn.innerText === '❤️';
                 if (forceLike) currentlyLiked = false;
@@ -564,7 +628,6 @@
             };
             likeBtn.addEventListener('click', () => triggerLike());
 
-            // Follow System
             followBtn.addEventListener('click', () => {
                 if (followBtn.innerText === 'Follow') {
                     followBtn.innerText = 'Following';
@@ -577,7 +640,6 @@
                 }
             });
 
-            // Share Fallback Strategy
             shareBtn.addEventListener('click', async () => {
                 if (navigator.share) {
                     try {
@@ -595,7 +657,6 @@
                 }
             });
 
-            // Comment Sheet Trigger Setup
             commentBtn.addEventListener('click', () => {
                 currentReelId = reel.id;
                 let savedComments = localStorage.getItem(`comments_${reel.id}`);
@@ -604,7 +665,6 @@
                 document.getElementById('globalCommentSheet').classList.add('open');
             });
 
-            // Creator Profile Assembly Trigger (Fixed Cut-off)
             const openProfile = () => {
                 document.getElementById('pViewUsername').innerText = `@${reel.username}`;
                 document.getElementById('pViewPic').src = reel.profile_pic || 'https://via.placeholder.com/80';
@@ -631,7 +691,6 @@
             profilePic.addEventListener('click', openProfile);
             usernameText.addEventListener('click', openProfile);
 
-            // Double Tap Handler System
             let tapTimer = null;
             video.addEventListener('click', () => {
                 if (!tapTimer) {
@@ -703,7 +762,52 @@
             });
         }
 
-        // Bottom Navigation Handler Core (Complete Logic Integrated) 🗺️
+        // Edit Profile Form Operations Core Logic 📝
+        function setupEditProfileSystem() {
+            const panel = document.getElementById('editProfileView');
+            const triggerBtn = document.getElementById('myEditProfileTrigger');
+            const cancelBtn = document.getElementById('cancelEditFormBtn');
+            const saveBtn = document.getElementById('saveEditFormBtn');
+
+            // Profile view references
+            const headerUsername = document.getElementById('myUsernameHeader');
+            const displayFullName = document.getElementById('myFullNameDisplay');
+            const displayBio = document.getElementById('myBioDisplay');
+
+            // Form element inputs
+            const nameInput = document.getElementById('inputEditName');
+            const usernameInput = document.getElementById('inputEditUsername');
+            const bioInput = document.getElementById('inputEditBio');
+
+            // Trigger click - panel ko block karein aur text feed karein
+            triggerBtn.addEventListener('click', () => {
+                nameInput.value = displayFullName.innerText;
+                usernameInput.value = headerUsername.innerText.replace('@', '');
+                bioInput.value = displayBio.innerText;
+                
+                panel.style.display = 'block';
+            });
+
+            // Cancel click - panel ko close none karein
+            cancelBtn.addEventListener('click', () => {
+                panel.style.display = 'none';
+            });
+
+            // Save Click (Done) - Text update aur close panel none
+            saveBtn.addEventListener('click', () => {
+                const filledName = nameInput.value.trim();
+                const filledUsername = usernameInput.value.trim();
+                const filledBio = bioInput.value.trim();
+
+                if (filledName !== "") displayFullName.innerText = filledName;
+                if (filledUsername !== "") headerUsername.innerText = `@${filledUsername}`;
+                displayBio.innerText = filledBio;
+
+                panel.style.display = 'none';
+                showToast("Profile updated! ✨");
+            });
+        }
+
         function setupBottomNavigation() {
             const homeBtn = document.getElementById('navHome');
             const searchBtn = document.getElementById('navSearch');
@@ -718,17 +822,15 @@
                 reelsCont.style.display = 'none';
                 searchCont.style.display = 'none';
                 profileCont.style.display = 'none';
-                
-                // Saare global sheets tabs badalne par hide ho jayein
                 document.getElementById('globalCommentSheet').classList.remove('open');
                 document.getElementById('globalProfileView').classList.remove('open');
+                document.getElementById('editProfileView').style.display = 'none'; // Edit panel backup safe close
             }
 
             homeBtn.addEventListener('click', () => {
                 resetActiveTabs();
                 homeBtn.classList.add('active');
                 reelsCont.style.display = 'block';
-                // Home tab par aate hi active video automatic dubara play ho jaye
                 if (currentPlayingVideo) currentPlayingVideo.play().catch(e => console.log(e));
             });
 
@@ -736,7 +838,6 @@
                 resetActiveTabs();
                 searchBtn.classList.add('active');
                 searchCont.style.display = 'block';
-                // Background video stop taaki aawaz na aaye
                 if (currentPlayingVideo) currentPlayingVideo.pause();
             });
 
@@ -767,7 +868,6 @@
                     const video = entry.target;
                     if (entry.isIntersecting) {
                         currentPlayingVideo = video; 
-                        // Video tabhi auto-play ho jab user actual home stream screen par ho
                         if (!profileSheet.classList.contains('open') && document.getElementById('reelsContainer').style.display !== 'none') {
                             video.play().catch(err => console.log("Autoplay waiting"));
                         }
