@@ -385,7 +385,7 @@
             transform: translateX(-50%) scale(1);
         }
 
-        /* Bottom Navigation Bar Styles 🗺️ (Safe Zone System) */
+        /* Bottom Navigation Bar Styles 🗺️ (Safe Zone Fix) */
         .bottom-nav {
             position: fixed;
             bottom: 15px; 
@@ -598,7 +598,7 @@
                 setupGlobalProfileView();
                 setupBottomNavigation();
                 setupEditProfileSystem();
-                loadProfileData(); // Permanent saved data load karne ke liye function call 🔄
+                loadProfileData(); // 🔄 App load hote hi saved data kholne ke liye call kiya
 
             } catch (error) {
                 console.error('Reels load karne mein dikkat aayi:', error);
@@ -763,7 +763,7 @@
             });
         }
 
-        // permanent memory se data load karne ka naya function 📥
+        // 📥 Permanent memory se data load karne ka function
         function loadProfileData() {
             let savedName = localStorage.getItem('profileName');
             if (savedName) {
@@ -816,7 +816,7 @@
                 if (filledUsername !== "") headerUsername.innerText = `@${filledUsername}`;
                 displayBio.innerText = filledBio;
 
-                // 💾 Data ko permanent phone memory mein save karne ke liye
+                // 💾 Naye data ko permanent phone memory mein save karne ke liye
                 localStorage.setItem('profileName', filledName);
                 localStorage.setItem('profileUsername', filledUsername);
                 localStorage.setItem('profileBio', filledBio);
