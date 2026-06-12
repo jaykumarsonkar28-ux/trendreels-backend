@@ -611,7 +611,7 @@
 
                 setupReelController();
                 setupGlobalCommentSheet();
-                setupGlobalLikesSheet(); // ⚙️ Likes setup call kiya
+                setupGlobalLikesSheet(); 
                 setupGlobalProfileView();
                 setupBottomNavigation();
                 setupEditProfileSystem();
@@ -631,7 +631,7 @@
             const followBtn = card.querySelector('.follow-btn');
             const profilePic = card.querySelector('.profile-pic');
             const usernameText = card.querySelector('.username');
-            const likesCountBtn = card.querySelector('.likes-count-trigger'); // 🔘 Select kiya
+            const likesCountBtn = card.querySelector('.likes-count-trigger'); 
 
             const triggerLike = (forceLike = false) => {
                 let currentlyLiked = likeBtn.innerText === '❤️';
@@ -647,7 +647,7 @@
             };
             likeBtn.addEventListener('click', () => triggerLike());
 
-            // 🖱️ Likes count par click hone par sheet kholne ka logic
+            // 🖱️ Likes count click toggle logic
             likesCountBtn.addEventListener('click', () => {
                 const likesSheet = document.getElementById('globalLikesSheet');
                 const likesList = document.getElementById('globalLikesList');
@@ -749,12 +749,19 @@
             listContainer.scrollTop = listContainer.scrollHeight;
         }
 
-        // 👥 List render karne ka function
+        // 👥 Updated Likes List render function
         function renderLikesList(container) {
             container.innerHTML = ''; 
             mockLikes.forEach(user => {
+                let savedFollow = localStorage.getItem(`follow_${user.username}`);
+                let currentFollowText = savedFollow === 'following' ? 'Following' : 'Follow';
+                
+                let btnStyle = currentFollowText === 'Following' 
+                    ? "background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); color: #fff;" 
+                    : "background: #3897f0; color: #fff; border: none;";
+
                 container.innerHTML += `
-                    <div class="comment-item" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <div class="comment-item" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;" data-username="${user.username}">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <img src="${user.pic}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
                             <div>
@@ -762,7 +769,7 @@
                                 <div style="color: #aaa; font-size: 12px;">${user.name}</div>
                             </div>
                         </div>
-                        <button class="follow-btn" style="background: #3897f0; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;">Follow</button>
+                        <button class="follow-btn" style="${btnStyle} padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;">${currentFollowText}</button>
                     </div>
                 `;
             });
@@ -799,13 +806,34 @@
             });
         }
 
-        // ✖️ Global Likes Sheet setup function close button ke liye
+        // ✖️ Updated Global Likes Sheet setup function with click logic
         function setupGlobalLikesSheet() {
             const likesSheet = document.getElementById('globalLikesSheet');
             const closeBtn = document.getElementById('likesCloseBtn');
+            const likesList = document.getElementById('globalLikesList');
 
             closeBtn.addEventListener('click', () => {
                 likesSheet.classList.remove('open');
+            });
+
+            likesList.addEventListener('click', (e) => {
+                if (e.target.classList.contains('follow-btn')) {
+                    const btn = e.target;
+                    const parent = btn.closest('.comment-item');
+                    const username = parent.dataset.username;
+
+                    if (btn.innerText === 'Follow') {
+                        btn.innerText = 'Following';
+                        btn.style.background = 'rgba(255, 255, 255, 0.2)';
+                        btn.style.border = '1px solid rgba(255, 255, 255, 0.4)';
+                        localStorage.setItem(`follow_${username}`, 'following');
+                    } else {
+                        btn.innerText = 'Follow';
+                        btn.style.background = '#3897f0';
+                        btn.style.border = 'none';
+                        localStorage.setItem(`follow_${username}`, 'Follow');
+                    }
+                }
             });
         }
 
@@ -893,7 +921,7 @@
                 searchCont.style.display = 'none';
                 profileCont.style.display = 'none';
                 document.getElementById('globalCommentSheet').classList.remove('open');
-                document.getElementById('globalLikesSheet').classList.remove('open'); // Likes sheet safe-zone reset
+                document.getElementById('globalLikesSheet').classList.remove('open'); 
                 document.getElementById('globalProfileView').classList.remove('open');
                 document.getElementById('editProfileView').style.display = 'none';
             }
@@ -946,7 +974,7 @@
                     } else {
                         video.pause();
                         commentSheet.classList.remove('open');
-                        likesSheet.classList.remove('open'); // Scroll hone par close ho jaye
+                        likesSheet.classList.remove('open'); 
                     }
                 });
             }, observerOptions);
