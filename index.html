@@ -633,6 +633,12 @@
             const usernameText = card.querySelector('.username');
             const likesCountBtn = card.querySelector('.likes-count-trigger'); 
 
+            // 🔢 Dynamic Likes Logic initial setup
+            let isLiked = localStorage.getItem(`like_${reel.id}`) === 'true';
+            let baseLikes = 29524; 
+            let currentLikes = isLiked ? baseLikes + 1 : baseLikes;
+            likesCountBtn.innerText = currentLikes.toLocaleString();
+
             const triggerLike = (forceLike = false) => {
                 let currentlyLiked = likeBtn.innerText === '❤️';
                 if (forceLike) currentlyLiked = false;
@@ -640,14 +646,16 @@
                 if (!currentlyLiked) {
                     likeBtn.innerText = '❤️';
                     localStorage.setItem(`like_${reel.id}`, 'true');
+                    currentLikes++; 
                 } else {
                     likeBtn.innerText = '🤍';
                     localStorage.setItem(`like_${reel.id}`, 'false');
+                    currentLikes--; 
                 }
+                likesCountBtn.innerText = currentLikes.toLocaleString();
             };
             likeBtn.addEventListener('click', () => triggerLike());
 
-            // 🖱️ Likes count click toggle logic
             likesCountBtn.addEventListener('click', () => {
                 const likesSheet = document.getElementById('globalLikesSheet');
                 const likesList = document.getElementById('globalLikesList');
@@ -749,7 +757,7 @@
             listContainer.scrollTop = listContainer.scrollHeight;
         }
 
-        // 👥 Updated Likes List render function
+        // 👥 Likes List render function
         function renderLikesList(container) {
             container.innerHTML = ''; 
             mockLikes.forEach(user => {
@@ -806,7 +814,7 @@
             });
         }
 
-        // ✖️ Updated Global Likes Sheet setup function with click logic
+        // ✖️ Global Likes Sheet setup function with click logic
         function setupGlobalLikesSheet() {
             const likesSheet = document.getElementById('globalLikesSheet');
             const closeBtn = document.getElementById('likesCloseBtn');
