@@ -385,7 +385,7 @@
             transform: translateX(-50%) scale(1);
         }
 
-        /* Bottom Navigation Bar Styles 🗺️ (Safe Zone Fix) */
+        /* Bottom Navigation Bar Styles 🗺️ */
         .bottom-nav {
             position: fixed;
             bottom: 15px; 
@@ -513,6 +513,14 @@
         </div>
     </div>
 
+    <div class="comment-sheet" id="globalLikesSheet">
+        <div class="sheet-header">
+            <h3>Likes</h3>
+            <button class="close-btn" id="likesCloseBtn">✕</button>
+        </div>
+        <div class="comments-list" id="globalLikesList"></div>
+    </div>
+
     <div class="profile-view" id="globalProfileView">
         <div class="profile-header-area">
             <span class="profile-view-username" id="pViewUsername">@username</span>
@@ -542,6 +550,13 @@
         let currentReelId = null;
         let currentCommentsArray = [];
         let currentPlayingVideo = null; 
+
+        // 📋 Mock users ka data Likes List ke liye
+        const mockLikes = [
+            { username: 'royal_sonkar', name: 'ROYAL SONKAR', pic: 'https://picsum.photos/id/1011/40/40' },
+            { username: 'aartisonkar884', name: 'aarti sonkar', pic: 'https://picsum.photos/id/1012/40/40' },
+            { username: 'itsme_yogesh', name: 'YOGESH SINHA', pic: 'https://picsum.photos/id/1013/40/40' }
+        ];
 
         function showToast(message) {
             const toast = document.getElementById('toastBox');
@@ -575,6 +590,7 @@
                         
                         <div class="reels-buttons">
                             <button class="action-btn like-btn">${likeIcon}</button>
+                            <span class="likes-count-trigger" style="font-size: 12px; text-align: center; margin-top: -15px; margin-bottom: 15px; cursor: pointer; font-weight: bold;">29.5K</span>
                             <button class="action-btn comment-btn">💬</button>
                             <button class="action-btn share-btn">🔗</button>
                         </div>
@@ -595,10 +611,11 @@
 
                 setupReelController();
                 setupGlobalCommentSheet();
+                setupGlobalLikesSheet(); // ⚙️ Likes setup call kiya
                 setupGlobalProfileView();
                 setupBottomNavigation();
                 setupEditProfileSystem();
-                loadProfileData(); // 🔄 App load hote hi saved data kholne ke liye call kiya
+                loadProfileData();
 
             } catch (error) {
                 console.error('Reels load karne mein dikkat aayi:', error);
@@ -614,6 +631,7 @@
             const followBtn = card.querySelector('.follow-btn');
             const profilePic = card.querySelector('.profile-pic');
             const usernameText = card.querySelector('.username');
+            const likesCountBtn = card.querySelector('.likes-count-trigger'); // 🔘 Select kiya
 
             const triggerLike = (forceLike = false) => {
                 let currentlyLiked = likeBtn.innerText === '❤️';
@@ -628,6 +646,14 @@
                 }
             };
             likeBtn.addEventListener('click', () => triggerLike());
+
+            // 🖱️ Likes count par click hone par sheet kholne ka logic
+            likesCountBtn.addEventListener('click', () => {
+                const likesSheet = document.getElementById('globalLikesSheet');
+                const likesList = document.getElementById('globalLikesList');
+                renderLikesList(likesList);
+                likesSheet.classList.add('open');
+            });
 
             followBtn.addEventListener('click', () => {
                 if (followBtn.innerText === 'Follow') {
@@ -723,6 +749,25 @@
             listContainer.scrollTop = listContainer.scrollHeight;
         }
 
+        // 👥 List render karne ka function
+        function renderLikesList(container) {
+            container.innerHTML = ''; 
+            mockLikes.forEach(user => {
+                container.innerHTML += `
+                    <div class="comment-item" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <img src="${user.pic}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                            <div>
+                                <span class="comment-user" style="color:#fff;">@${user.username}</span>
+                                <div style="color: #aaa; font-size: 12px;">${user.name}</div>
+                            </div>
+                        </div>
+                        <button class="follow-btn" style="background: #3897f0; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;">Follow</button>
+                    </div>
+                `;
+            });
+        }
+
         function setupGlobalCommentSheet() {
             const sheet = document.getElementById('globalCommentSheet');
             document.getElementById('globalCloseBtn').addEventListener('click', () => sheet.classList.remove('open'));
@@ -754,6 +799,16 @@
             });
         }
 
+        // ✖️ Global Likes Sheet setup function close button ke liye
+        function setupGlobalLikesSheet() {
+            const likesSheet = document.getElementById('globalLikesSheet');
+            const closeBtn = document.getElementById('likesCloseBtn');
+
+            closeBtn.addEventListener('click', () => {
+                likesSheet.classList.remove('open');
+            });
+        }
+
         function setupGlobalProfileView() {
             document.getElementById('profileCloseBtn').addEventListener('click', () => {
                 document.getElementById('globalProfileView').classList.remove('open');
@@ -763,7 +818,6 @@
             });
         }
 
-        // 📥 Permanent memory se data load karne ka function
         function loadProfileData() {
             let savedName = localStorage.getItem('profileName');
             if (savedName) {
@@ -777,11 +831,10 @@
 
             let savedBio = localStorage.getItem('profileBio');
             if (savedBio) {
-                document.getElementById('myBioDisplay').innerText = savedBio;
+                document.getElementById('myFullNameDisplay').nextElementSibling.innerText = savedBio;
             }
         }
 
-        // Edit Profile Form Setup Logic 📝
         function setupEditProfileSystem() {
             const panel = document.getElementById('editProfileView');
             const triggerBtn = document.getElementById('myEditProfileTrigger');
@@ -790,7 +843,7 @@
 
             const headerUsername = document.getElementById('myUsernameHeader');
             const displayFullName = document.getElementById('myFullNameDisplay');
-            const displayBio = document.getElementById('myBioDisplay');
+            const displayBio = displayFullName.nextElementSibling;
 
             const nameInput = document.getElementById('inputEditName');
             const usernameInput = document.getElementById('inputEditUsername');
@@ -816,7 +869,6 @@
                 if (filledUsername !== "") headerUsername.innerText = `@${filledUsername}`;
                 displayBio.innerText = filledBio;
 
-                // 💾 Naye data ko permanent phone memory mein save karne ke liye
                 localStorage.setItem('profileName', filledName);
                 localStorage.setItem('profileUsername', filledUsername);
                 localStorage.setItem('profileBio', filledBio);
@@ -841,6 +893,7 @@
                 searchCont.style.display = 'none';
                 profileCont.style.display = 'none';
                 document.getElementById('globalCommentSheet').classList.remove('open');
+                document.getElementById('globalLikesSheet').classList.remove('open'); // Likes sheet safe-zone reset
                 document.getElementById('globalProfileView').classList.remove('open');
                 document.getElementById('editProfileView').style.display = 'none';
             }
@@ -870,6 +923,7 @@
         function setupReelController() {
             const videos = document.querySelectorAll('.reel-video');
             const commentSheet = document.getElementById('globalCommentSheet');
+            const likesSheet = document.getElementById('globalLikesSheet');
             const profileSheet = document.getElementById('globalProfileView');
 
             const unmuteAll = () => {
@@ -892,6 +946,7 @@
                     } else {
                         video.pause();
                         commentSheet.classList.remove('open');
+                        likesSheet.classList.remove('open'); // Scroll hone par close ho jaye
                     }
                 });
             }, observerOptions);
