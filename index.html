@@ -501,6 +501,7 @@
         </div>
     </div>
 
+    <!-- Global Comment Sheet 📋 -->
     <div class="comment-sheet" id="globalCommentSheet">
         <div class="sheet-header">
             <h3>Comments</h3>
@@ -513,6 +514,7 @@
         </div>
     </div>
 
+    <!-- Global Likes Sheet 📑 -->
     <div class="comment-sheet" id="globalLikesSheet">
         <div class="sheet-header">
             <h3>Likes</h3>
@@ -590,7 +592,8 @@
                         
                         <div class="reels-buttons">
                             <button class="action-btn like-btn">${likeIcon}</button>
-                            <span class="likes-count-trigger" style="font-size: 12px; text-align: center; margin-top: -15px; margin-bottom: 15px; cursor: pointer; font-weight: bold;">29.5K</span>
+                            <!-- 🔘 Likes Count Trigger Element -->
+                            <span class="likes-count-trigger" style="font-size: 12px; text-align: center; margin-top: -15px; margin-bottom: 15px; cursor: pointer; font-weight: bold;">29,524</span>
                             <button class="action-btn comment-btn">💬</button>
                             <button class="action-btn share-btn">🔗</button>
                         </div>
@@ -622,6 +625,30 @@
             }
         }
 
+        // 🌐 Global Profile View Open karne ka single function
+        function openGlobalProfile(username, profilePic, bio, posts) {
+            document.getElementById('pViewUsername').innerText = `@${username}`;
+            document.getElementById('pViewPic').src = profilePic || 'https://via.placeholder.com/80';
+            document.getElementById('pViewBio').innerText = bio || 'No bio available';
+            
+            const gridContainer = document.getElementById('pViewGrid');
+            gridContainer.innerHTML = '';
+            
+            if (posts && posts.length > 0) {
+                posts.forEach(postUrl => {
+                    const img = document.createElement('img');
+                    img.className = 'grid-post-img';
+                    img.src = postUrl;
+                    gridContainer.appendChild(img);
+                });
+            } else {
+                gridContainer.innerHTML = '<p style="color:#777; grid-column: span 3; text-align:center; padding: 20px;">No posts yet</p>';
+            }
+
+            if (currentPlayingVideo) currentPlayingVideo.pause();
+            document.getElementById('globalProfileView').classList.add('open');
+        }
+
         function bindReelEvents(card, reel) {
             const video = card.querySelector('.reel-video');
             const heart = card.querySelector('.heart-popup');
@@ -633,7 +660,7 @@
             const usernameText = card.querySelector('.username');
             const likesCountBtn = card.querySelector('.likes-count-trigger'); 
 
-            // 🔢 Dynamic Likes Logic initial setup
+            // 🔢 Dynamic Likes Count Initial Logic
             let isLiked = localStorage.getItem(`like_${reel.id}`) === 'true';
             let baseLikes = 29524; 
             let currentLikes = isLiked ? baseLikes + 1 : baseLikes;
@@ -700,31 +727,9 @@
                 document.getElementById('globalCommentSheet').classList.add('open');
             });
 
-            const openProfile = () => {
-                document.getElementById('pViewUsername').innerText = `@${reel.username}`;
-                document.getElementById('pViewPic').src = reel.profile_pic || 'https://via.placeholder.com/80';
-                document.getElementById('pViewBio').innerText = reel.bio || 'No bio available';
-                
-                const gridContainer = document.getElementById('pViewGrid');
-                gridContainer.innerHTML = '';
-                
-                if (reel.posts && reel.posts.length > 0) {
-                    reel.posts.forEach(postUrl => {
-                        const img = document.createElement('img');
-                        img.className = 'grid-post-img';
-                        img.src = postUrl;
-                        gridContainer.appendChild(img);
-                    });
-                } else {
-                    gridContainer.innerHTML = '<p style="color:#777; grid-column: span 3; text-align:center; padding: 20px;">No posts yet</p>';
-                }
-
-                if (currentPlayingVideo) currentPlayingVideo.pause();
-                document.getElementById('globalProfileView').classList.add('open');
-            };
-
-            profilePic.addEventListener('click', openProfile);
-            usernameText.addEventListener('click', openProfile);
+            // 👤 Click par Global profile function call ho rha hai
+            profilePic.addEventListener('click', () => openGlobalProfile(reel.username, reel.profile_pic, reel.bio, reel.posts));
+            usernameText.addEventListener('click', () => openGlobalProfile(reel.username, reel.profile_pic, reel.bio, reel.posts));
 
             let tapTimer = null;
             video.addEventListener('click', () => {
@@ -770,7 +775,7 @@
 
                 container.innerHTML += `
                     <div class="comment-item" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;" data-username="${user.username}">
-                        <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px; cursor: pointer;" class="user-info-trigger">
                             <img src="${user.pic}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
                             <div>
                                 <span class="comment-user" style="color:#fff;">@${user.username}</span>
@@ -814,7 +819,7 @@
             });
         }
 
-        // ✖️ Global Likes Sheet setup function with click logic
+        // ✖️ Global Likes Sheet setup function with Follow and Profile View click logic
         function setupGlobalLikesSheet() {
             const likesSheet = document.getElementById('globalLikesSheet');
             const closeBtn = document.getElementById('likesCloseBtn');
@@ -825,6 +830,7 @@
             });
 
             likesList.addEventListener('click', (e) => {
+                // 🔵 Follow Button click logic
                 if (e.target.classList.contains('follow-btn')) {
                     const btn = e.target;
                     const parent = btn.closest('.comment-item');
@@ -840,6 +846,22 @@
                         btn.style.background = '#3897f0';
                         btn.style.border = 'none';
                         localStorage.setItem(`follow_${username}`, 'Follow');
+                    }
+                    return;
+                }
+
+                // 👤 Likes sheet ke andar username ya photo par click hone par profile kholna
+                const triggerRow = e.target.closest('.user-info-trigger');
+                if (triggerRow) {
+                    const parent = triggerRow.closest('.comment-item');
+                    const username = parent.dataset.username;
+                    
+                    // Mock array se user ka data nikalna
+                    const targetUser = mockLikes.find(u => u.username === username);
+                    if (targetUser) {
+                        // Likes sheet band karke profile view kholna
+                        likesSheet.classList.remove('open');
+                        openGlobalProfile(targetUser.username, targetUser.pic, `Hey! I am ${targetUser.name}. Content Creator on TrendReels 🚀`, []);
                     }
                 }
             });
