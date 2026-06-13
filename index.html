@@ -47,6 +47,22 @@
             cursor: pointer;
         }
 
+        /* Progress Bar Container 🎞️ */
+        .progress-bar-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            z-index: 20;
+        }
+        .progress-bar-fill {
+            width: 0%;
+            height: 100%;
+            background: #3897f0;
+        }
+
         /* Right Side Buttons Container ↕️ */
         .reels-buttons {
             position: absolute;
@@ -421,10 +437,11 @@
     <div class="reels-container" id="reelsContainer"></div>
 
     <div class="search-view-container" id="searchView" style="display: none;">
-        <input type="text" class="search-bar-box" placeholder="🔍 Search creators or topics...">
+        <!-- 🔍 Search Input Field -->
+        <input type="text" class="search-bar-box" id="searchInputField" placeholder="🔍 Search creators by username...">
         <div style="font-weight: bold; margin-bottom: 10px;">Explore</div>
         
-        <div class="posts-grid">
+        <div class="posts-grid" id="exploreGridArea">
             <img class="grid-post-img" src="https://picsum.photos/id/11/200/200" alt="explore">
             <img class="grid-post-img" src="https://picsum.photos/id/12/200/200" alt="explore">
             <img class="grid-post-img" src="https://picsum.photos/id/13/200/200" alt="explore">
@@ -552,8 +569,9 @@
         let currentReelId = null;
         let currentCommentsArray = [];
         let currentPlayingVideo = null; 
+        let globalReelsData = []; // 🔍 Search ke liye data hold karne ka store
 
-        // 📋 Mock users ka data Likes List ke liye
+        // 📋 Fallback mock data agar JSON me liked_by na mile
         const mockLikes = [
             { username: 'royal_sonkar', name: 'ROYAL SONKAR', pic: 'https://picsum.photos/id/1011/40/40' },
             { username: 'aartisonkar884', name: 'aarti sonkar', pic: 'https://picsum.photos/id/1012/40/40' },
@@ -573,6 +591,7 @@
             try {
                 const response = await fetch(jsonUrl);
                 const data = await response.json();
+                globalReelsData = data; // 🔍 Array data store kiya
                 
                 for (const reel of data) {
                     const card = document.createElement('div');
@@ -590,9 +609,13 @@
                         <video class="reel-video" src="${reel.video_url}" loop muted playsinline></video>
                         <div class="heart-popup">❤️</div>
                         
+                        <!-- 🎞️ Video Progress Bar HTML -->
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill"></div>
+                        </div>
+
                         <div class="reels-buttons">
                             <button class="action-btn like-btn">${likeIcon}</button>
-                            <!-- 🔘 Likes Count Trigger Element -->
                             <span class="likes-count-trigger" style="font-size: 12px; text-align: center; margin-top: -15px; margin-bottom: 15px; cursor: pointer; font-weight: bold;">29,524</span>
                             <button class="action-btn comment-btn">💬</button>
                             <button class="action-btn share-btn">🔗</button>
@@ -618,6 +641,7 @@
                 setupGlobalProfileView();
                 setupBottomNavigation();
                 setupEditProfileSystem();
+                setupSearchSystem(); // 🔍 Search event listener setup
                 loadProfileData();
 
             } catch (error) {
@@ -625,7 +649,6 @@
             }
         }
 
-        // 🌐 Global Profile View Open karne ka single function
         function openGlobalProfile(username, profilePic, bio, posts) {
             document.getElementById('pViewUsername').innerText = `@${username}`;
             document.getElementById('pViewPic').src = profilePic || 'https://via.placeholder.com/80';
@@ -659,8 +682,16 @@
             const profilePic = card.querySelector('.profile-pic');
             const usernameText = card.querySelector('.username');
             const likesCountBtn = card.querySelector('.likes-count-trigger'); 
+            const progressBarFill = card.querySelector('.progress-bar-fill'); // 🎞️ Bar fill tracker
 
-            // 🔢 Dynamic Likes Count Initial Logic
+            // 🎞️ Progress Bar Logic
+            video.addEventListener('timeupdate', () => {
+                if (video.duration) {
+                    const progressPercentage = (video.currentTime / video.duration) * 100;
+                    progressBarFill.style.width = `${progressPercentage}%`;
+                }
+            });
+
             let isLiked = localStorage.getItem(`like_${reel.id}`) === 'true';
             let baseLikes = 29524; 
             let currentLikes = isLiked ? baseLikes + 1 : baseLikes;
@@ -686,7 +717,8 @@
             likesCountBtn.addEventListener('click', () => {
                 const likesSheet = document.getElementById('globalLikesSheet');
                 const likesList = document.getElementById('globalLikesList');
-                renderLikesList(likesList);
+                // 🔄 Dynamic Data: reel.liked_by pass kiya, nahi toh fallback chalega
+                renderLikesList(likesList, reel.liked_by || mockLikes);
                 likesSheet.classList.add('open');
             });
 
@@ -727,7 +759,6 @@
                 document.getElementById('globalCommentSheet').classList.add('open');
             });
 
-            // 👤 Click par Global profile function call ho rha hai
             profilePic.addEventListener('click', () => openGlobalProfile(reel.username, reel.profile_pic, reel.bio, reel.posts));
             usernameText.addEventListener('click', () => openGlobalProfile(reel.username, reel.profile_pic, reel.bio, reel.posts));
 
@@ -762,10 +793,10 @@
             listContainer.scrollTop = listContainer.scrollHeight;
         }
 
-        // 👥 Likes List render function
-        function renderLikesList(container) {
+        // 🔄 Dynamic Likes List render function
+        function renderLikesList(container, likedByData) {
             container.innerHTML = ''; 
-            mockLikes.forEach(user => {
+            likedByData.forEach(user => {
                 let savedFollow = localStorage.getItem(`follow_${user.username}`);
                 let currentFollowText = savedFollow === 'following' ? 'Following' : 'Follow';
                 
@@ -785,6 +816,47 @@
                         <button class="follow-btn" style="${btnStyle} padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer;">${currentFollowText}</button>
                     </div>
                 `;
+            });
+        }
+
+        // 🔍 Working Search Bar System Logic
+        function setupSearchSystem() {
+            const searchInput = document.getElementById('searchInputField');
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase().trim();
+                const gridArea = document.getElementById('exploreGridArea');
+                
+                if (query === '') {
+                    gridArea.innerHTML = `
+                        <img class="grid-post-img" src="https://picsum.photos/id/11/200/200" alt="explore">
+                        <img class="grid-post-img" src="https://picsum.photos/id/12/200/200" alt="explore">
+                        <img class="grid-post-img" src="https://picsum.photos/id/13/200/200" alt="explore">
+                    `;
+                    return;
+                }
+
+                // 🔄 Filter backend loaded creators
+                const matchedCreators = globalReelsData.filter(reel => 
+                    reel.username.toLowerCase().includes(query)
+                );
+
+                if (matchedCreators.length > 0) {
+                    gridArea.innerHTML = '';
+                    matchedCreators.forEach(creator => {
+                        const div = document.createElement('div');
+                        div.style.cssText = "background:#111; padding:15px; border-radius:8px; text-align:center; cursor:pointer; border:1px solid #222;";
+                        div.innerHTML = `
+                            <img src="${creator.profile_pic || 'https://via.placeholder.com/60'}" style="width:60px; height:60px; border-radius:50%; object-fit:cover; margin-bottom:8px;">
+                            <div style="font-weight:bold; font-size:14px;">@${creator.username}</div>
+                        `;
+                        div.addEventListener('click', () => {
+                            openGlobalProfile(creator.username, creator.profile_pic, creator.bio, creator.posts);
+                        });
+                        gridArea.appendChild(div);
+                    });
+                } else {
+                    gridArea.innerHTML = `<p style="color:#666; grid-column: span 3; text-align:center; padding:4px;">No creators found matching "${query}"</p>`;
+                }
             });
         }
 
@@ -819,7 +891,6 @@
             });
         }
 
-        // ✖️ Global Likes Sheet setup function with Follow and Profile View click logic
         function setupGlobalLikesSheet() {
             const likesSheet = document.getElementById('globalLikesSheet');
             const closeBtn = document.getElementById('likesCloseBtn');
@@ -830,7 +901,6 @@
             });
 
             likesList.addEventListener('click', (e) => {
-                // 🔵 Follow Button click logic
                 if (e.target.classList.contains('follow-btn')) {
                     const btn = e.target;
                     const parent = btn.closest('.comment-item');
@@ -850,16 +920,15 @@
                     return;
                 }
 
-                // 👤 Likes sheet ke andar username ya photo par click hone par profile kholna
                 const triggerRow = e.target.closest('.user-info-trigger');
                 if (triggerRow) {
                     const parent = triggerRow.closest('.comment-item');
                     const username = parent.dataset.username;
                     
-                    // Mock array se user ka data nikalna
+                    // JSON or Fallback matching array data extraction
+                    const currentListItems = Array.from(likesList.children).map(el => el.dataset.username);
                     const targetUser = mockLikes.find(u => u.username === username);
                     if (targetUser) {
-                        // Likes sheet band karke profile view kholna
                         likesSheet.classList.remove('open');
                         openGlobalProfile(targetUser.username, targetUser.pic, `Hey! I am ${targetUser.name}. Content Creator on TrendReels 🚀`, []);
                     }
