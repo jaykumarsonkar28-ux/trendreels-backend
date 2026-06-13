@@ -437,7 +437,6 @@
     <div class="reels-container" id="reelsContainer"></div>
 
     <div class="search-view-container" id="searchView" style="display: none;">
-        <!-- 🔍 Search Input Field -->
         <input type="text" class="search-bar-box" id="searchInputField" placeholder="🔍 Search creators by username...">
         <div style="font-weight: bold; margin-bottom: 10px;">Explore</div>
         
@@ -569,7 +568,7 @@
         let currentReelId = null;
         let currentCommentsArray = [];
         let currentPlayingVideo = null; 
-        let globalReelsData = []; // 🔍 Search ke liye data hold karne ka store
+        let globalReelsData = []; 
 
         // 📋 Fallback mock data agar JSON me liked_by na mile
         const mockLikes = [
@@ -591,7 +590,7 @@
             try {
                 const response = await fetch(jsonUrl);
                 const data = await response.json();
-                globalReelsData = data; // 🔍 Array data store kiya
+                globalReelsData = data; 
                 
                 for (const reel of data) {
                     const card = document.createElement('div');
@@ -609,7 +608,7 @@
                         <video class="reel-video" src="${reel.video_url}" loop muted playsinline></video>
                         <div class="heart-popup">❤️</div>
                         
-                        <!-- 🎞️ Video Progress Bar HTML -->
+                        <!-- 🎞️ Progress Bar HTML -->
                         <div class="progress-bar-container">
                             <div class="progress-bar-fill"></div>
                         </div>
@@ -641,7 +640,7 @@
                 setupGlobalProfileView();
                 setupBottomNavigation();
                 setupEditProfileSystem();
-                setupSearchSystem(); // 🔍 Search event listener setup
+                setupSearchSystem(); 
                 loadProfileData();
 
             } catch (error) {
@@ -682,7 +681,7 @@
             const profilePic = card.querySelector('.profile-pic');
             const usernameText = card.querySelector('.username');
             const likesCountBtn = card.querySelector('.likes-count-trigger'); 
-            const progressBarFill = card.querySelector('.progress-bar-fill'); // 🎞️ Bar fill tracker
+            const progressBarFill = card.querySelector('.progress-bar-fill'); 
 
             // 🎞️ Progress Bar Logic
             video.addEventListener('timeupdate', () => {
@@ -717,7 +716,6 @@
             likesCountBtn.addEventListener('click', () => {
                 const likesSheet = document.getElementById('globalLikesSheet');
                 const likesList = document.getElementById('globalLikesList');
-                // 🔄 Dynamic Data: reel.liked_by pass kiya, nahi toh fallback chalega
                 renderLikesList(likesList, reel.liked_by || mockLikes);
                 likesSheet.classList.add('open');
             });
@@ -793,7 +791,7 @@
             listContainer.scrollTop = listContainer.scrollHeight;
         }
 
-        // 🔄 Dynamic Likes List render function
+        // 👥 Likes List render function
         function renderLikesList(container, likedByData) {
             container.innerHTML = ''; 
             likedByData.forEach(user => {
@@ -819,7 +817,7 @@
             });
         }
 
-        // 🔍 Working Search Bar System Logic
+        // 🔍 Updated Search Bar System Logic with concat()
         function setupSearchSystem() {
             const searchInput = document.getElementById('searchInputField');
             searchInput.addEventListener('input', (e) => {
@@ -835,9 +833,12 @@
                     return;
                 }
 
-                // 🔄 Filter backend loaded creators
-                const matchedCreators = globalReelsData.filter(reel => 
-                    reel.username.toLowerCase().includes(query)
+                // 👥 1. Dono lists ko ek bada pool banane ke liye concat kiya
+                const allUsers = globalReelsData.concat(mockLikes);
+
+                // 🔄 2. Filter ab dono lists ke users par ek sath chalega
+                const matchedCreators = allUsers.filter(user => 
+                    user.username.toLowerCase().includes(query)
                 );
 
                 if (matchedCreators.length > 0) {
@@ -845,12 +846,18 @@
                     matchedCreators.forEach(creator => {
                         const div = document.createElement('div');
                         div.style.cssText = "background:#111; padding:15px; border-radius:8px; text-align:center; cursor:pointer; border:1px solid #222;";
+                        
+                        // Handle both property types 🖼️
+                        const userPic = creator.profile_pic || creator.pic || 'https://via.placeholder.com/60';
+                        const userBio = creator.bio || `Hey! I am ${creator.name || creator.username}.`;
+                        const userPosts = creator.posts || [];
+
                         div.innerHTML = `
-                            <img src="${creator.profile_pic || 'https://via.placeholder.com/60'}" style="width:60px; height:60px; border-radius:50%; object-fit:cover; margin-bottom:8px;">
+                            <img src="${userPic}" style="width:60px; height:60px; border-radius:50%; object-fit:cover; margin-bottom:8px;">
                             <div style="font-weight:bold; font-size:14px;">@${creator.username}</div>
                         `;
                         div.addEventListener('click', () => {
-                            openGlobalProfile(creator.username, creator.profile_pic, creator.bio, creator.posts);
+                            openGlobalProfile(creator.username, userPic, userBio, userPosts);
                         });
                         gridArea.appendChild(div);
                     });
@@ -925,8 +932,6 @@
                     const parent = triggerRow.closest('.comment-item');
                     const username = parent.dataset.username;
                     
-                    // JSON or Fallback matching array data extraction
-                    const currentListItems = Array.from(likesList.children).map(el => el.dataset.username);
                     const targetUser = mockLikes.find(u => u.username === username);
                     if (targetUser) {
                         likesSheet.classList.remove('open');
